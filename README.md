@@ -77,7 +77,9 @@ Image sizes are recorded once Phase 2/3 builds land.
   secrets, and public packages pull on any machine without `docker login`.
 - Publishing uses `GITHUB_TOKEN` in CI (`packages: write`); no long-lived PAT.
   Local publishing needs a PAT with `write:packages`, `read:packages`, `repo`,
-  `workflow` on the `originaltrini0` account.
+  `workflow`; `originaltrini0` is an organization owned by `gerard-samuel`,
+  whose token needs `packages` scope for local publishes (`gh auth
+  refresh-scope packages`).
 
 ## Release checklist
 
