@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits"],
+  "schedule": ["before 6am on monday"],
+  "packageRules": [
+    {
+      "matchManagers": ["devcontainer", "docker"],
+      "groupName": "base images",
+      "separateMajorMinor": true,
+      "automerge": false
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "minor and patch pins"
+    },
+    {
+      "description": "Exact X.Y.Z pins in project devcontainer.json stay grouped per stack",
+      "matchFileNames": ["templates/**"],
+      "groupName": "template pins"
+    }
+  ]
+}
