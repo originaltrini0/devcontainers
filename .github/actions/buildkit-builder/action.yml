@@ -11,11 +11,13 @@ runs:
     - shell: bash
       run: |
         set -euo pipefail
+        # Driver-opt keys are cacert/cert/key (per the working
+        # gh-runner-e2e-tests recipe); the long buildx-driver-remote-* names
+        # are rejected as invalid by the remote driver.
         docker buildx create --name buildkit-github --driver remote \
-          --driver-opt buildx-driver-remote-timeout=10m \
-          --driver-opt buildx-driver-remote-ca-cert=/etc/buildkit/ca.pem \
-          --driver-opt buildx-driver-remote-tls-cert=/etc/buildkit/cert.pem \
-          --driver-opt buildx-driver-remote-client-key=/etc/buildkit/key.pem \
-          tcp://buildkitd-github.ci-builders.svc.cluster.local:1234
+          --driver-opt "cacert=/etc/buildkit/ca.pem" \
+          --driver-opt "cert=/etc/buildkit/cert.pem" \
+          --driver-opt "key=/etc/buildkit/key.pem" \
+          "${BUILDKIT_HOST:-tcp://buildkitd-github.ci-builders.svc.cluster.local:1234}"
         docker buildx inspect --bootstrap buildkit-github
         echo 'BUILDX_BUILDER=buildkit-github' >> "$GITHUB_ENV"
