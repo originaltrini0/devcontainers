@@ -69,18 +69,35 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        feature: [common, k8s-tools]
-        base: [ubuntu, debian]
+        leg:
+          - feature: common
+            short: ubuntu
+            base: mcr.microsoft.com/devcontainers/base:ubuntu
+          - feature: common
+            short: debian
+            base: mcr.microsoft.com/devcontainers/base:debian
+          # The Ansible dev-tools image is Fedora-based (dnf), unlike the
+          # Debian/Ubuntu bases — real-world coverage for pkg_install.
+          - feature: common
+            short: ansible-fedora
+            base: ghcr.io/ansible/community-ansible-dev-tools:v26.4.4
+          - feature: k8s-tools
+            short: ubuntu
+            base: mcr.microsoft.com/devcontainers/base:ubuntu
+          - feature: k8s-tools
+            short: debian
+            base: mcr.microsoft.com/devcontainers/base:debian
+    name: features (${{ matrix.leg.feature }}-${{ matrix.leg.short }})
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install -g @devcontainers/cli
-      - name: Test ${{ matrix.feature }} on ${{ matrix.base }}
+      - name: Test ${{ matrix.leg.feature }} on ${{ matrix.leg.base }}
         run: >-
-          devcontainer features test -f '${{ matrix.feature }}' --skip-scenarios
-          --base-image mcr.microsoft.com/devcontainers/base:${{ matrix.base }}
+          devcontainer features test -f '${{ matrix.leg.feature }}' --skip-scenarios
+          --base-image '${{ matrix.leg.base }}'
 
   templates:
     runs-on: ubuntu-latest
