@@ -68,18 +68,43 @@ Image builds must use the **repo root** as build context
 
 | Stack | Image / base | Features (defaults) |
 |-------|--------------|---------------------|
-| Python | `ghcr.io/originaltrini0/devcontainers/python:1.0.2` | `common:1.0.0` — gh 2.104.0, glab 1.130.0; image: uv 0.13.8, ruff 0.17.5, pytest 9.2.0 |
-| Go | `ghcr.io/originaltrini0/devcontainers/go:1.0.2` | `common:1.0.0`; image: gopls v0.24.0, dlv v1.27.2, staticcheck v0.8.2, gofumpt v0.12.0, goimports v0.52.0, govulncheck v1.9.0, gotest v0.0.7, air v1.67.4, golangci-lint 2.15.0 |
-| Kubernetes | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.0`, `k8s-tools:1.0.0` — kubectl 1.35.2, talosctl 1.13.2, flux 2.10.0, helm 3.22.1, kustomize 5.8.3, sops 3.13.3, age 1.3.2, cilium 0.20.3, yq v4.54.3, step `none` (opt-in) |
-| Ansible | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `common:1.0.0` |
+| Python | `ghcr.io/originaltrini0/devcontainers/python:1.0.2` | `common:1.0.2` — gh 2.104.0, glab 1.130.0; image: uv 0.13.8, ruff 0.17.5, pytest 9.2.0 |
+| Go | `ghcr.io/originaltrini0/devcontainers/go:1.0.2` | `common:1.0.2`; image: gopls v0.24.0, dlv v1.27.2, staticcheck v0.8.2, gofumpt v0.12.0, goimports v0.52.0, govulncheck v1.9.0, gotest v0.0.7, air v1.67.4, golangci-lint 2.15.0 |
+| Kubernetes | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.2`, `k8s-tools:1.0.2` — kubectl 1.35.2, talosctl 1.13.2, flux 2.10.0, helm 3.22.1, kustomize 5.8.3, sops 3.13.3, age 1.3.2, cilium 0.20.3, yq v4.54.3, step `none` (opt-in) |
+| Ansible | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `common:1.0.2` |
 
-Image sizes, recorded at build: Python `1.0.0` — 2277 MB (`linux/arm64`,
-Python 3.13.5), Go `1.0.0` — 4214 MB (`linux/arm64`, Go 1.27.4). Both built
-locally, not yet published. `k8s-tools` installs are smoke-tested on
-`linux/amd64` and `linux/arm64` (including the `step` opt-in); Kubernetes has
-no custom image and Ansible uses the upstream
+`1.0.1`/`1.0.2` changed no Dockerfiles: the images are content-identical to
+the multi-arch `v1.0.0` CI release (the `1.0.2` tags alias its manifest
+digests until the next tag rebuilds them), while the features carry real
+fixes — `1.0.1` dispatches package installs across apt/dnf/apk bases and
+`1.0.2` makes feature options actually apply (the devcontainer CLI exports
+them as uppercase env vars, not `$OPTIONS`). Image sizes recorded at build:
+Python 2277 MB (`linux/arm64`, Python 3.13.5), Go 4214 MB (`linux/arm64`,
+Go 1.27.4). Kubernetes has no custom image and Ansible uses the upstream
 `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` (tag verified pullable),
 which already ships ansible-core, ansible-lint and molecule.
+
+## Migrated projects
+
+Every project in `~/code/projects` consumes the shared system at the exact
+`1.0.2` pins, with a committed `devcontainer-lock.json`. `k8s-tools` options
+are the single override point for per-cluster CLI divergence.
+
+| Project | Image / base | Feature ref / options |
+|---------|--------------|-----------------------|
+| `sglang-benchmarks` | `python:1.0.2` | `common:1.0.2` |
+| `finplanner` | `go:1.0.2` | `common:1.0.2` |
+| `k8s-prod` | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.2`, `k8s-tools:1.0.2` defaults (prod baseline) |
+| `k8s-dev` | `mcr.microsoft.com/devcontainers/base:ubuntu` | `k8s-tools:1.0.2` + kubectl 1.36.5, talosctl 1.14.2, flux 2.9.6, helm 4.3.0, cilium 0.20.1, step 0.31.0 (mirrors `.tool-versions`) |
+| `k8s-dev-old` (archived, runnable) | `mcr.microsoft.com/devcontainers/base:ubuntu` | `k8s-tools:1.0.2` + kubectl 1.36.0, talosctl 1.13.2, flux 2.8.7 (era pins from its own manifests) |
+| `ansible-homelab-ops` | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `common:1.0.2`; root + `--network=host` + `--hostname=ansible-dev-env`, `.vault_pass` mounted at `${containerWorkspaceFolder}` |
+| `ansible-collection-homelab-{os,infra,security,apps}` | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `common:1.0.2` (thin configs; vendored `.ansible/collections/**` untouched) |
+
+Validation matrix (all green): pytest 13 passed (`sglang-benchmarks`), full
+Go tool-version checks (`finplanner`), ansible/ansible-lint/molecule + vault
+read/encrypt (`ansible-homelab-ops` and the four collections), per-cluster
+CLI pins + readable `SOPS_AGE_KEY_FILE` + kube/talos mounts (`k8s-prod`,
+`k8s-dev`, `k8s-dev-old`).
 
 ## Registry and visibility
 
