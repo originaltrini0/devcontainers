@@ -42,8 +42,9 @@ jobs:
         run: |
           set -euo pipefail
           manifest="$(docker buildx imagetools inspect '${{ steps.pin.outputs.ref }}')"
-          echo "$manifest" | grep -q 'Platform: linux/amd64'
-          echo "$manifest" | grep -q 'Platform: linux/arm64'
+          # imagetools pads the label: `Platform:    linux/amd64`
+          echo "$manifest" | grep -qE 'Platform: +linux/amd64'
+          echo "$manifest" | grep -qE 'Platform: +linux/arm64'
       - name: Version assertions for ${{ matrix.image }}
         env:
           IMAGE: ${{ matrix.image }}
