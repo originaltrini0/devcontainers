@@ -86,10 +86,12 @@ Python 3.13.5; built locally, not yet published). Go to follow in Phase 3.
 - GHCR package visibility: **public** (chosen) — images and features contain no
   secrets, and public packages pull on any machine without `docker login`.
 - Publishing uses `GITHUB_TOKEN` in CI (`packages: write`); no long-lived PAT.
-  Local publishing needs a PAT with `write:packages`, `read:packages`, `repo`,
-  `workflow`; `originaltrini0` is an organization owned by `gerard-samuel`,
-  whose token needs `packages` scope for local publishes (`gh auth
-  refresh-scope packages`).
+  Local publishing needs a **classic PAT with `write:packages`** (+ `repo`, the
+  package links to the private repo): the `packages` scope cannot be added to
+  the gh CLI token (`gh auth refresh -s packages` fails `invalid_scope`). Use it
+  directly with `docker login ghcr.io -u gerard-samuel --password-stdin`; image
+  pushes and `devcontainer features publish` both use Docker's stored
+  credentials. `originaltrini0` is an organization owned by `gerard-samuel`.
 
 ## Release checklist
 
