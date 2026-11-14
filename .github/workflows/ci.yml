@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io/originaltrini0/devcontainers
+
+jobs:
+  sync-features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Feature src/ must match scripts/
+        run: bash scripts/sync-features.sh --check
+
+  version-consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Feature versions and template refs agree
+        run: bash scripts/bump-version.sh --check
+
+  # Image builds run on ARC ephemeral runners against the shared
+  # buildkitd-github worker (see .github/actions/buildkit-builder). There is
+  # no Docker daemon on those pods, so there is no `--load`/`docker run`
+  # smoke here: the Dockerfiles' RUN version checks are the gate, executed
+  # natively (amd64) and under buildkit's QEMU emulation (arm64) for both
+  # platforms. Runtime smoke of published images lives in smoke.yml.
+  images:
+    runs-on: [github-runner-scale-set]
+    needs: sync-features
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [python, go]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/buildkit-builder
+      - name: Build ${{ matrix.image }} amd64+arm64 (cacheonly, no push)
+        run: |
+          set -euo pipefail
+          img='${{ matrix.image }}'
+          cache_ref="$REGISTRY/$img:buildcache"
+          # A missing cache manifest is a fatal importer error in buildx,
+          # and new packages start private — import only when it resolves.
+          cache_args=()
+          if docker buildx imagetools inspect "$cache_ref" > /dev/null 2>&1; then
+            cache_args=(--cache-from "type=registry,ref=$cache_ref")
+          fi
+          docker buildx build --builder buildkit-github \
+            --platform linux/amd64,linux/arm64 \
+            --output type=cacheonly \
+            -f "images/$img/Dockerfile" \
+            "${cache_args[@]}" .
+
+  # devcontainer CLI needs a Docker daemon, so feature/template checks stay on
+  # GitHub-hosted runners; only image builds use the cluster builder.
+  features:
+    runs-on: ubuntu-latest
+    needs: sync-features
+    strategy:
+      fail-fast: false
+      matrix:
+        feature: [common, k8s-tools]
+        base: [ubuntu, debian]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g @devcontainers/cli
+      - name: Test ${{ matrix.feature }} on ${{ matrix.base }}
+        run: >-
+          devcontainer features test -f '${{ matrix.feature }}' --skip-scenarios
+          --base-image mcr.microsoft.com/devcontainers/base:${{ matrix.base }}
+
+  templates:
+    runs-on: ubuntu-latest
+    needs: sync-features
+    strategy:
+      fail-fast: false
+      matrix:
+        template: [python, go, kubernetes, ansible]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g @devcontainers/cli
+      - name: Build local ${{ matrix.template }} image when the template needs one
+        if: matrix.template == 'python' || matrix.template == 'go'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: images/${{ matrix.template }}/Dockerfile
+          load: true
+          push: false
+          cache-from: type=gha,scope=${{ matrix.template }}
+          tags: ${{ env.REGISTRY }}/${{ matrix.template }}:ci
+      - name: Build template against local image and local feature sources
+        run: |
+          set -euo pipefail
+          name='${{ matrix.template }}'
+          work="$RUNNER_TEMP/template-check"
+          rm -rf "$work"; mkdir -p "$work/$name"
+          cp -r "templates/$name/.devcontainer" "$work/$name/.devcontainer"
+          # The CLI only accepts local features inside <workspace>/.devcontainer.
+          cp -r src "$work/$name/.devcontainer/features"
+          # Lockfiles pin published digests; CI validates the mutable working
+          # refs, so drop them in the throwaway copy.
+          rm -f "$work/$name/.devcontainer/devcontainer-lock.json"
+          cfg="$work/$name/.devcontainer/devcontainer.json"
+          sed -i -E \
+            -e 's#"(ghcr\.io/originaltrini0/devcontainers/(python|go)):[^"]+"#"\1:ci"#g' \
+            -e 's#"(ghcr\.io/originaltrini0/devcontainers/(common|k8s-tools)):[^"]+"#"./features/\2"#g' \
+            "$cfg"
+          devcontainer build --workspace-folder "$work/$name"
+
+  validate-refs:
+    runs-on: ubuntu-latest
+    needs: sync-features
+    steps:
+      - uses: actions/checkout@v4
+      - name: Template refs are in the allowed stack set
+        run: bash scripts/validate-projects.sh --dirs "$PWD/templates" --allow-missing

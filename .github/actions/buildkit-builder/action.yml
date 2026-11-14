@@ -1,0 +1,21 @@
+name: Configure remote BuildKit
+description: >-
+  Point buildx at the shared buildkitd-github worker in the ci-builders
+  namespace. ARC runner pods have no Docker daemon; client certs are mounted
+  at /etc/buildkit by the scale-set pod template. arm64 layers run under the
+  node's QEMU emulation inside buildkitd.
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+        docker buildx create --name buildkit-github --driver remote \
+          --driver-opt buildx-driver-remote-timeout=10m \
+          --driver-opt buildx-driver-remote-ca-cert=/etc/buildkit/ca.pem \
+          --driver-opt buildx-driver-remote-tls-cert=/etc/buildkit/cert.pem \
+          --driver-opt buildx-driver-remote-client-key=/etc/buildkit/key.pem \
+          tcp://buildkitd-github.ci-builders.svc.cluster.local:1234
+        docker buildx inspect --bootstrap buildkit-github
+        echo 'BUILDX_BUILDER=buildkit-github' >> "$GITHUB_ENV"

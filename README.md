@@ -102,7 +102,44 @@ which already ships ansible-core, ansible-lint and molecule.
 
 1. Land changes on `main` (CI builds and tests every image/feature).
 2. `scripts/bump-version.sh X.Y.Z`, commit, tag `vX.Y.Z`, push tag.
-3. Release workflow builds native per-arch images, pushes by digest, combines
-   tags with `docker buildx imagetools create`, publishes features.
-4. Projects bump exact pins via Renovate; commit refreshed lockfiles.
-5. Rollback: revert the exact tag + lockfile, redeploy the container.
+3. Release workflow pushes one multi-arch build per image as manifest lists
+   (`X.Y.Z` / `X` / `X.Y` / `latest`) via the shared BuildKit worker and
+   publishes the feature collection (`devcontainer features publish src`);
+   never re-issue an already-published feature version.
+4. First release of a new package (`go`, `k8s-tools`): toggle its GHCR package
+   visibility to public in org settings — workflow-created packages default to
+   private.
+5. Projects bump exact pins via Renovate; commit refreshed lockfiles.
+6. Rollback: revert the exact tag + lockfile, redeploy the container.
+
+## Release and CI
+
+- **CI on PRs and pushes to `main`** (`.github/workflows/ci.yml`):
+  `scripts/sync-features.sh --check` gates feature src/ drift and
+  `scripts/bump-version.sh --check` gates version consistency. Image builds
+  (`python`, `go`) run on ARC self-hosted runners (`github-runner-scale-set`)
+  against the shared remote BuildKit worker `buildkitd-github`
+  (`.github/actions/buildkit-builder`) — those pods have no Docker daemon, so
+  CI builds emit `type=cacheonly` and the Dockerfiles' RUN version checks are
+  the gate; arm64 is emulated inside BuildKit. Feature tests and template
+  devcontainer builds stay on GitHub-hosted runners because the devcontainer
+  CLI needs a Docker daemon. Template refs are allowlist-checked with
+  `validate-projects.sh --dirs "$PWD/templates" --allow-missing`.
+- **Tool-pin ownership**: Renovate bumps the canonical pins in
+  `scripts/install-*.sh` and the mirrored feature-option defaults in
+  `src/*/devcontainer-feature.json` in one PR — keep both in sync in the same
+  PR (`renovate.json`). Our own `ghcr.io/originaltrini0/devcontainers/*`
+  image/feature tags are excluded from Renovate and move only via
+  `bump-version.sh`.
+- **Smoke** (`.github/workflows/smoke.yml`, scheduled + manual): re-pulls the
+  exact pinned published tags, asserts the canonical tool versions and the
+  multi-arch manifest. It fails by design until the first multi-arch release
+  replaces the current arm64-only `python:1.0.0`.
+- **Required checks**: the job set is `sync-features`,
+  `version-consistency`, `validate-refs`, `images (*)`, `features (*)`,
+  `templates (*)`. GitHub refuses branch protection on free-plan private
+  repositories (403), so treat these as review gates until the org upgrades
+  or the repo goes public; the protection payload (matrix-leg contexts) is
+  one `gh api PUT branches/main/protection` call away.
+- `validate-projects.sh` also scans `~/code/projects` locally; projects live
+  in separate repos, so CI validates `templates/` only.

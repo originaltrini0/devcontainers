@@ -1,0 +1,71 @@
+name: Smoke published images
+
+# Catches silent registry/digest drift: pulls the exact published tags that
+# templates pin and re-asserts the canonical tool pins from scripts/. Multi-
+# arch manifest sanity is checked via imagetools, so a single-arch or retagged
+# push fails here too. Login (packages: read) keeps the check usable if a
+# package is ever made private.
+
+on:
+  schedule:
+    - cron: '30 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  REGISTRY: ghcr.io/originaltrini0/devcontainers
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [python, go]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve the pinned tag (JSONC-safe)
+        id: pin
+        run: |
+          set -euo pipefail
+          ref="$(grep -oE '"image": *"[^"]+"' "templates/${{ matrix.image }}/.devcontainer/devcontainer.json" | head -n1 | sed -E 's/.*"image": *"([^"]+)".*/\1/')"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - name: Manifest must be multi-arch
+        run: |
+          set -euo pipefail
+          manifest="$(docker buildx imagetools inspect '${{ steps.pin.outputs.ref }}')"
+          echo "$manifest" | grep -q 'Platform: linux/amd64'
+          echo "$manifest" | grep -q 'Platform: linux/arm64'
+      - name: Version assertions for ${{ matrix.image }}
+        env:
+          IMAGE: ${{ matrix.image }}
+          REF: ${{ steps.pin.outputs.ref }}
+        run: |
+          set -euo pipefail
+          pin() { grep -oE "\\\$\{$1:-[^}]+}" "scripts/install-$2-tools.sh" \
+            | head -n1 | sed -E 's/.*:-([^}]+)\}/\1/'; }
+          case "$IMAGE" in
+            python)
+              uv_ver="$(pin UV_VERSION python)"; ruff_ver="$(pin RUFF_VERSION python)"
+              pytest_ver="$(pin PYTEST_VERSION python)"
+              docker run --rm "$REF" bash -lc "
+                set -euo pipefail
+                python -c 'import sys; sys.exit(0 if sys.version_info[:2] == (3, 13) else 1)'
+                uv --version | grep -qF '$uv_ver'
+                ruff --version | grep -qF '$ruff_ver'
+                pytest --version | grep -qF '$pytest_ver'" ;;
+            go)
+              gl_ver="$(pin GOLANGCI_LINT_VERSION go)"
+              docker run --rm "$REF" bash -lc "
+                set -euo pipefail
+                go version | grep -qF 'go1.27'
+                golangci-lint --version | grep -qF '$gl_ver'" ;;
+          esac

@@ -4,9 +4,23 @@
   "schedule": ["before 6am on monday"],
   "packageRules": [
     {
-      "matchManagers": ["devcontainer", "docker"],
+      "description": "Our own ghcr refs move with bump-version.sh + release tags, not with Renovate",
+      "matchPackagePatterns": ["^ghcr\\.io/originaltrini0/devcontainers/"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["devcontainer", "dockerfile"],
       "groupName": "base images",
       "separateMajorMinor": true,
+      "automerge": false
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "tool pins"
+    },
+    {
+      "matchUpdateTypes": ["major"],
       "automerge": false
     },
     {
@@ -14,9 +28,150 @@
       "groupName": "minor and patch pins"
     },
     {
-      "description": "Exact X.Y.Z pins in project devcontainer.json stay grouped per stack",
+      "description": "Exact X.Y.Z pins in template devcontainer.json stay grouped per stack",
       "matchFileNames": ["templates/**"],
       "groupName": "template pins"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Tool pins live in scripts/install-*.sh (canonical) and mirror as feature option defaults; Renovate bumps both in one PR",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{UV_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"uv\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "astral-sh/uv"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{RUFF_VERSION:-(?<currentValue>[^\"}]+)\\}"
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "astral-sh/ruff"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{PYTEST_VERSION:-(?<currentValue>[^\"}]+)\\}"
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "pytest-dev/pytest"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$"],
+      "matchStrings": [
+        "\\$\\{GOLANGCI_LINT_VERSION:-(?<currentValue>[^\"}]+)\\}"
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "golangci/golangci-lint"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{GH_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"gh\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "cli/cli"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{KUBECTL_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"kubectl\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "kubernetes/kubernetes"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{TALOS_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"talosctl\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "siderolabs/talos"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{FLUX_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"flux\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "fluxcd/flux2"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{HELM_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"helm\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "helm/helm"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{KUSTOMIZE_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"kustomize\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "kubernetes-sigs/kustomize"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{SOPS_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"sops\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "getsops/sops"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{AGE_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"age\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "FiloSottile/age"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{CILIUM_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"cilium\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "cilium/cilium-cli"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{YQ_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"yq\": \\{[^}]*\"default\": \"(?<currentValue>v?[0-9][^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "versioning": "semver",
+      "depNameTemplate": "mikefarah/yq"
     }
   ]
 }

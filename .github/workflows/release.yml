@@ -1,0 +1,114 @@
+name: Release
+
+# Triggered by `git tag vX.Y.Z && git push origin vX.Y.Z`.
+# Images build on ARC runners via the shared buildkitd-github worker, which
+# serves both platforms from one amd64 node set (arm64 RUN under QEMU,
+# amortized by the shared :buildcache registry cache — the go image runs many
+# `go install` toolchains). A single multi-platform build pushes the
+# manifest-list tags X.Y.Z / X / X.Y / latest directly. Features publish from
+# the collection (src/), versions come from devcontainer-feature.json.
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io/originaltrini0/devcontainers
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      major: ${{ steps.v.outputs.major }}
+      minor: ${{ steps.v.outputs.minor }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "major=${version%%.*}" >> "$GITHUB_OUTPUT"
+          echo "minor=${version%.*}" >> "$GITHUB_OUTPUT"
+      - name: Tag must match every feature version
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          for f in src/*/devcontainer-feature.json; do
+            jq -e --arg v "$version" '.version == $v' "$f" > /dev/null \
+              || { echo "$f is not version $version"; exit 1; }
+          done
+      - name: Repo-wide pin consistency (templates, README, features)
+        run: bash scripts/bump-version.sh --check
+
+  images:
+    needs: meta
+    runs-on: [github-runner-scale-set]
+    # Emulated arm64 `go install` toolchains; the registry cache keeps
+    # re-runs on the same tool layer bounded.
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [python, go]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/buildkit-builder
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish ${{ matrix.image }} ${{ needs.meta.outputs.version }} (amd64+arm64)
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+          MAJOR: ${{ needs.meta.outputs.major }}
+          MINOR: ${{ needs.meta.outputs.minor }}
+          IMG: ${{ matrix.image }}
+        run: |
+          set -euo pipefail
+          cache_ref="$REGISTRY/$IMG:buildcache"
+          # Missing cache manifests abort the buildx importer; new packages
+          # also start private until toggled public. Import only when it
+          # resolves post-login; always export so the next run can.
+          cache_args=()
+          if docker buildx imagetools inspect "$cache_ref" > /dev/null 2>&1; then
+            cache_args+=(--cache-from "type=registry,ref=$cache_ref")
+          fi
+          docker buildx build --builder buildkit-github \
+            --platform linux/amd64,linux/arm64 --push \
+            -f "images/$IMG/Dockerfile" \
+            -t "$REGISTRY/$IMG:$VERSION" \
+            -t "$REGISTRY/$IMG:$MAJOR" \
+            -t "$REGISTRY/$IMG:$MINOR" \
+            -t "$REGISTRY/$IMG:latest" \
+            --cache-to "type=registry,ref=$cache_ref,mode=max" \
+            "${cache_args[@]}" .
+
+  # devcontainer features publish drives Docker push under the hood, so it
+  # needs a Docker daemon and stays on a hosted runner. `publish src` packages
+  # the whole collection; the CLI skips a version that already exists, so
+  # bump-version.sh must precede every tag — never re-issue a published
+  # feature version.
+  features:
+    needs: meta
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g @devcontainers/cli
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish feature collection
+        run: >-
+          devcontainer features publish src
+          --registry ghcr.io --namespace originaltrini0/devcontainers
