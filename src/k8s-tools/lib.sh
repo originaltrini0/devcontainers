@@ -48,14 +48,21 @@ add_safe_directory() {
 }
 
 # option_value "key=value ..." KEY DEFAULT — resolve a feature option.
+# The devcontainer CLI exports options as UPPERCASE env vars and only sets
+# $OPTIONS in some runtimes, so check both before the default.
 option_value() {
-  local opts="$1" key="$2" default="$3" pair
+  local opts="$1" key="$2" default="$3" pair env
   for pair in $opts; do
     if [ "${pair%%=*}" = "$key" ]; then
       printf '%s' "${pair#*=}"
       return
     fi
   done
+  env="$(printf '%s' "$key" | tr '[:lower:]' '[:upper:]' | sed 's/[-.]/_/g')"
+  if [ -n "${!env:-}" ]; then
+    printf '%s' "${!env}"
+    return
+  fi
   printf '%s' "$default"
 }
 

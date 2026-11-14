@@ -68,8 +68,8 @@ Image builds must use the **repo root** as build context
 
 | Stack | Image / base | Features (defaults) |
 |-------|--------------|---------------------|
-| Python | `ghcr.io/originaltrini0/devcontainers/python:1.0.1` | `common:1.0.0` — gh 2.104.0, glab 1.130.0; image: uv 0.13.8, ruff 0.17.5, pytest 9.2.0 |
-| Go | `ghcr.io/originaltrini0/devcontainers/go:1.0.1` | `common:1.0.0`; image: gopls v0.24.0, dlv v1.27.2, staticcheck v0.8.2, gofumpt v0.12.0, goimports v0.52.0, govulncheck v1.9.0, gotest v0.0.7, air v1.67.4, golangci-lint 2.15.0 |
+| Python | `ghcr.io/originaltrini0/devcontainers/python:1.0.2` | `common:1.0.0` — gh 2.104.0, glab 1.130.0; image: uv 0.13.8, ruff 0.17.5, pytest 9.2.0 |
+| Go | `ghcr.io/originaltrini0/devcontainers/go:1.0.2` | `common:1.0.0`; image: gopls v0.24.0, dlv v1.27.2, staticcheck v0.8.2, gofumpt v0.12.0, goimports v0.52.0, govulncheck v1.9.0, gotest v0.0.7, air v1.67.4, golangci-lint 2.15.0 |
 | Kubernetes | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.0`, `k8s-tools:1.0.0` — kubectl 1.35.2, talosctl 1.13.2, flux 2.10.0, helm 3.22.1, kustomize 5.8.3, sops 3.13.3, age 1.3.2, cilium 0.20.3, yq v4.54.3, step `none` (opt-in) |
 | Ansible | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `common:1.0.0` |
 
