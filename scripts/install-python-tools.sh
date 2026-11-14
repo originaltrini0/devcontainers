@@ -12,6 +12,11 @@ PYTEST_VERSION="${PYTEST_VERSION:-9.2.0}"
 python3 -m pip install --no-cache-dir --upgrade \
   "uv==${UV_VERSION}" "ruff==${RUFF_VERSION}" "pytest==${PYTEST_VERSION}"
 
+# The base image's pipx py-utils venv ships an older pytest whose shim sits
+# ahead of /usr/local/bin on PATH; drop it so the pinned install wins.
+rm -f /usr/local/py-utils/bin/pytest /usr/local/py-utils/bin/py.test
+
+# Explicit paths: the stale shim on PATH would otherwise satisfy the check.
 uv --version
 ruff --version
-pytest --version
+/usr/local/bin/pytest --version

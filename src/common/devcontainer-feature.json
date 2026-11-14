@@ -1,0 +1,23 @@
+{
+  "id": "common",
+  "version": "1.0.0",
+  "name": "Common",
+  "description": "Org CLI tooling: pinned gh, glab, jq, ripgrep, plus a git safe-directory helper.",
+  "options": {
+    "gh": {
+      "type": "string",
+      "proposals": ["2.104.0", "latest"],
+      "default": "2.104.0",
+      "description": "GitHub CLI version (use latest to track upstream)."
+    },
+    "glab": {
+      "type": "string",
+      "proposals": ["1.130.0", "latest"],
+      "default": "1.130.0",
+      "description": "GitLab CLI version."
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ]
+}

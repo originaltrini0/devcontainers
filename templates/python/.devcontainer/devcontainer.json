@@ -1,0 +1,42 @@
+{
+  "name": "python",
+  "image": "ghcr.io/originaltrini0/devcontainers/python:1.0.0",
+  "features": {
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.0": {}
+  },
+  "remoteUser": "vscode",
+  // Container-local uv venv; the host .venv is a macOS Homebrew environment
+  // and must never be reused inside Linux.
+  "containerEnv": {
+    "UV_PROJECT_ENVIRONMENT": "/home/vscode/.venv",
+    "SSH_AUTH_SOCK": "/run/host-services/ssh-auth.sock"
+  },
+  "remoteEnv": {
+    "VIRTUAL_ENV": "/home/vscode/.venv",
+    "PATH": "/home/vscode/.venv/bin:${containerEnv:PATH}"
+  },
+  // Bind-mount host config dirs so tooling auth carries into the container.
+  // Every mount source must already exist on the host — Docker fails the whole
+  // container if one is missing.
+  "mounts": [
+    "source=${localEnv:HOME}/.config/kilo,target=/home/vscode/.config/kilo,type=bind,readonly",
+    "source=${localEnv:HOME}/.local/share/kilo,target=/home/vscode/.local/share/kilo,type=bind,consistency=cached",
+    "source=/run/host-services/ssh-auth.sock,target=/run/host-services/ssh-auth.sock,type=bind",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
+    "source=${localEnv:HOME}/.config/gh,target=/home/vscode/.config/gh,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/glab-cli,target=/home/vscode/.config/glab-cli,type=bind,consistency=cached"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "kilocode.kilo-code",
+        "ms-python.python",
+        "tamasfe.even-better-toml",
+        "charliermarsh.ruff"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/home/vscode/.venv/bin/python"
+      }
+    }
+  }
+}

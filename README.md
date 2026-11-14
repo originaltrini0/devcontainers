@@ -33,16 +33,25 @@ Dockerfiles.
 
 ```
 images/{python,go}/          Dockerfiles (Phase 2/3)
-features/{common,k8s-tools}/ src/ + test/<feature>/test.sh
+src/{common,k8s-tools}/      devcontainer-feature.json + install.sh + lib.sh
+test/<feature>/test.sh       feature version assertions
 templates/{python,go,kubernetes,ansible}/.devcontainer/
 scripts/                     canonical installers, lib.sh, sync/check tooling
 ```
 
+`src/` + `test/` at the repo root is the layout `devcontainer features test`
+and `publish` require (CLI v0.90.0 rejects a `features/<feature>/{src,test}`
+nesting).
+
 Feature packaging constraint: the Dev Container CLI packages only a feature's
 `src/` directory, so `install.sh` can never source `../../scripts/`. The
-canonical installer lives in `scripts/`, and `scripts/sync-features.sh` vendors
-`lib.sh` into each `features/<feature>/src/`. CI runs `sync-features.sh --check`
-and fails on drift — never hand-edit a vendored `lib.sh`.
+canonical installers live in `scripts/`, and `scripts/sync-features.sh` vendors
+`lib.sh` and the feature's installer (as `install.sh`) into each `src/<feature>/`.
+CI runs `sync-features.sh --check` and fails on drift — never hand-edit a
+vendored file.
+
+Image builds must use the **repo root** as build context
+(`docker buildx build -f images/python/Dockerfile .`) so `COPY scripts/` resolves.
 
 ## Versioning and reproducibility
 
@@ -64,7 +73,8 @@ and fails on drift — never hand-edit a vendored `lib.sh`.
 | Kubernetes | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.0`, `k8s-tools:1.0.0` — kubectl 1.35.2, talosctl 1.13.2, flux 2.10.0, helm 3.22.1, kustomize 5.8.3, sops 3.13.3, age 1.3.2, cilium 0.20.3, yq v4.54.3, step `none` (opt-in) |
 | Ansible | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `common:1.0.0` |
 
-Image sizes are recorded once Phase 2/3 builds land.
+Image sizes, recorded at build: Python `1.0.0` — 2277 MB (`linux/arm64`,
+Python 3.13.5; built locally, not yet published). Go to follow in Phase 3.
 
 ## Registry and visibility
 
