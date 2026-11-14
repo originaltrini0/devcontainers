@@ -74,7 +74,12 @@ Image builds must use the **repo root** as build context
 | Ansible | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `common:1.0.0` |
 
 Image sizes, recorded at build: Python `1.0.0` — 2277 MB (`linux/arm64`,
-Python 3.13.5; built locally, not yet published). Go to follow in Phase 3.
+Python 3.13.5), Go `1.0.0` — 4214 MB (`linux/arm64`, Go 1.27.4). Both built
+locally, not yet published. `k8s-tools` installs are smoke-tested on
+`linux/amd64` and `linux/arm64` (including the `step` opt-in); Kubernetes has
+no custom image and Ansible uses the upstream
+`ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` (tag verified pullable),
+which already ships ansible-core, ansible-lint and molecule.
 
 ## Registry and visibility
 

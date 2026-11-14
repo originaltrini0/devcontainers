@@ -1,0 +1,38 @@
+{
+  "name": "ansible",
+  // No custom Ansible image: the upstream image already ships ansible-core,
+  // ansible-lint and molecule, so a fork would only re-pin what upstream owns.
+  // `common` adds the org CLIs on top.
+  "image": "ghcr.io/ansible/community-ansible-dev-tools:v26.4.4",
+  "features": {
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.0": {}
+  },
+  // Ansible privileges are project-owned overrides, kept here as the pattern:
+  // vault editing and inventory-wide SSH need root plus host networking.
+  "remoteUser": "root",
+  "containerUser": "root",
+  "runArgs": [
+    "--hostname=ansible-dev-env",
+    "--network=host"
+  ],
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  // Target must be ${containerWorkspaceFolder} (inside the container), never a
+  // host path — ${localWorkspaceFolder} as a target is wrong in-container.
+  "mounts": [
+    "source=${localWorkspaceFolder}/.vault_pass,target=${containerWorkspaceFolder}/.vault_pass,type=bind",
+    "source=${localWorkspaceFolder}/ssh.cfg,target=/root/.ssh/config,type=bind",
+    "source=${localEnv:HOME}/.ssh/known_hosts,target=/root/.ssh/known_hosts,type=bind",
+    "source=${localEnv:HOME}/.ssh/homelab,target=/root/.ssh/homelab,type=bind"
+    // Project-owned: sibling collection mounts, e.g.
+    // "source=${localWorkspaceFolder}/../ansible-collection-homelab-os,target=/workspaces/ansible-collection-homelab-os,type=bind"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "redhat.ansible",
+        "ms-python.python",
+        "kilocode.kilo-code"
+      ]
+    }
+  }
+}

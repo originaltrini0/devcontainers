@@ -1,0 +1,57 @@
+{
+  "name": "kubernetes",
+  // No custom image: k8s-tools is the sole owner of the CLI pins, so a baked
+  // image would only duplicate them. Projects override feature options per
+  // cluster instead — e.g. for a k8s-dev-style cluster:
+  //   "ghcr.io/originaltrini0/devcontainers/k8s-tools:1.0.0": {
+  //     "kubectl": "1.36.5", "talosctl": "1.14.2", "flux": "2.9.6",
+  //     "helm": "4.3.0", "cilium": "0.20.1", "step": "0.31.0"
+  //   }
+  // Omitting options entirely gets the k8s-prod-style baseline (kubectl
+  // 1.35.2, talosctl 1.13.2, flux 2.10.0, helm 3.22.1, cilium 0.20.3, no step).
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.0": {},
+    "ghcr.io/originaltrini0/devcontainers/k8s-tools:1.0.0": {}
+  },
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "TALOSCONFIG": "/home/vscode/.config/talos/config.yaml",
+    // Point at the project's age key. In-workspace keys (dev-k8s.agekey,
+    // dev.agekey, …) need no mount; a key outside the workspace must be
+    // mounted read-only below and referenced by its container path.
+    "SOPS_AGE_KEY_FILE": "/workspaces/${localWorkspaceFolderBasename}/dev.agekey",
+    "SSH_AUTH_SOCK": "/run/host-services/ssh-auth.sock"
+  },
+  // Bind-mount host config dirs so cluster access works inside the container.
+  // Every mount source must already exist on the host — Docker fails the whole
+  // container if one is missing. Talos config lives in ~/.config/talos (see
+  // TALOSCONFIG above).
+  "mounts": [
+    "source=${localEnv:HOME}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/talos,target=/home/vscode/.config/talos,type=bind,consistency=cached",
+    // Only needed when the age key lives outside the workspace:
+    // "source=${localEnv:HOME}/.config/sops/age/keys.txt,target=/home/vscode/.config/sops/age/keys.txt,type=bind,readonly",
+    // Kilo Code configuration
+    "source=${localEnv:HOME}/.config/kilo,target=/home/vscode/.config/kilo,type=bind,readonly",
+    "source=${localEnv:HOME}/.local/share/kilo,target=/home/vscode/.local/share/kilo,type=bind,consistency=cached",
+    // Host SSH agent + config/known_hosts. sk-* keys live on the YubiKey, so only
+    // the agent socket can sign; the .ssh mount provides ssh config only.
+    "source=/run/host-services/ssh-auth.sock,target=/run/host-services/ssh-auth.sock,type=bind",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
+    // gh/glab API tokens (glab/gh auth login) persist across container rebuilds.
+    "source=${localEnv:HOME}/.config/gh,target=/home/vscode/.config/gh,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/glab-cli,target=/home/vscode/.config/glab-cli,type=bind,consistency=cached"
+  ],
+  // Project-owned: add `git config --global --add safe.directory
+  // /workspaces/<project>` as postCreateCommand when needed.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "kilocode.kilo-code",
+        "redhat.vscode-yaml",
+        "ms-kubernetes-tools.vscode-kubernetes-tools"
+      ]
+    }
+  }
+}

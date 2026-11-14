@@ -41,8 +41,10 @@ download_extract "https://github.com/FiloSottile/age/releases/download/v${AGE_VE
   -C /usr/local/bin --transform='s|age/||' "age/age" "age/age-keygen"
 
 if [ "$STEP_VERSION" != "none" ]; then
-  download_extract "https://github.com/smallstep/cli/releases/download/v${STEP_VERSION}/step-cli_${STEP_VERSION}_linux_${ARCH}.tar.gz" \
-    --strip-components=1 -C /usr/local/bin "step-cli_${STEP_VERSION}_linux_${ARCH}/step"
+# smallstep publishes `step_<ver>_<os>_<arch>.tar.gz` (not the older
+# `step-cli_<ver>_linux_<arch>` name) with the binary at <dir>/bin/step.
+download_extract "https://github.com/smallstep/cli/releases/download/v${STEP_VERSION}/step_linux_${STEP_VERSION}_${ARCH}.tar.gz" \
+    --strip-components=2 -C /usr/local/bin "step_${STEP_VERSION}/bin/step"
   step version
 fi
 

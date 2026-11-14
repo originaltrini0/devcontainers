@@ -1,0 +1,71 @@
+{
+  "id": "k8s-tools",
+  "version": "1.0.0",
+  "name": "Kubernetes GitOps tools",
+  "description": "Pinned Kubernetes/GitOps CLIs. Sole owner of these version pins; per-project configs override options instead of forking an image.",
+  "options": {
+    "kubectl": {
+      "type": "string",
+      "proposals": ["1.35.2", "1.36.5", "latest"],
+      "default": "1.35.2",
+      "description": "kubectl version."
+    },
+    "talosctl": {
+      "type": "string",
+      "proposals": ["1.13.2", "1.14.2"],
+      "default": "1.13.2",
+      "description": "talosctl version (tracks the Talos cluster version)."
+    },
+    "flux": {
+      "type": "string",
+      "proposals": ["2.10.0", "2.9.6"],
+      "default": "2.10.0",
+      "description": "flux CLI version."
+    },
+    "helm": {
+      "type": "string",
+      "proposals": ["3.22.1", "4.3.0"],
+      "default": "3.22.1",
+      "description": "helm version."
+    },
+    "kustomize": {
+      "type": "string",
+      "proposals": ["5.8.3"],
+      "default": "5.8.3",
+      "description": "kustomize version."
+    },
+    "sops": {
+      "type": "string",
+      "proposals": ["3.13.3"],
+      "default": "3.13.3",
+      "description": "sops version."
+    },
+    "age": {
+      "type": "string",
+      "proposals": ["1.3.2"],
+      "default": "1.3.2",
+      "description": "age / age-keygen version."
+    },
+    "cilium": {
+      "type": "string",
+      "proposals": ["0.20.3", "0.20.1"],
+      "default": "0.20.3",
+      "description": "cilium-cli version."
+    },
+    "yq": {
+      "type": "string",
+      "proposals": ["v4.54.3"],
+      "default": "v4.54.3",
+      "description": "yq version (upstream tags include the leading v)."
+    },
+    "step": {
+      "type": "string",
+      "proposals": ["none", "0.31.0"],
+      "default": "none",
+      "description": "smallstep step CLI version; 'none' skips the install (opt-in)."
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ]
+}

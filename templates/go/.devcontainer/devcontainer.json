@@ -1,0 +1,55 @@
+{
+  "name": "go",
+  "image": "ghcr.io/originaltrini0/devcontainers/go:1.0.0",
+  "features": {
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.0": {}
+  },
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "SSH_AUTH_SOCK": "/run/host-services/ssh-auth.sock"
+  },
+  // Bind-mount host config dirs so tooling auth carries into the container.
+  // Every mount source must already exist on the host — Docker fails the whole
+  // container if one is missing.
+  "mounts": [
+    "source=${localEnv:HOME}/.config/kilo,target=/home/vscode/.config/kilo,type=bind,readonly",
+    "source=${localEnv:HOME}/.local/share/kilo,target=/home/vscode/.local/share/kilo,type=bind,consistency=cached",
+    "source=/run/host-services/ssh-auth.sock,target=/run/host-services/ssh-auth.sock,type=bind",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
+    "source=${localEnv:HOME}/.config/gh,target=/home/vscode/.config/gh,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/glab-cli,target=/home/vscode/.config/glab-cli,type=bind,consistency=cached"
+  ],
+  // Project-owned: add `git config --global --add safe.directory
+  // /workspaces/<project>` as postCreateCommand when the workspace is not a
+  // git repo checkout owned by the container user.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "kilocode.kilo-code",
+        "golang.go",
+        "github.vscode-pull-request-github",
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml"
+      ],
+      "settings": {
+        // Tools are baked into the go image; stop the Go extension from
+        // re-downloading its own copies.
+        "go.toolsManagement.checkForUpdates": "local",
+        "go.toolsManagement.autoUpdate": false,
+        "go.useLanguageServer": true,
+        "gopls": {
+          "formatting.gofumpt": true,
+          "ui.completion.usePlaceholders": true,
+          "ui.diagnostic.staticcheck": true
+        },
+        "[go]": {
+          "editor.defaultFormatter": "golang.go",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        }
+      }
+    }
+  }
+}

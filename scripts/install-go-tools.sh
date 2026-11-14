@@ -27,6 +27,6 @@ gopls version
 dlv version
 staticcheck --version
 gofumpt --version
-govulncheck -test.version
-air --version
+govulncheck -version
+air -v
 golangci-lint --version

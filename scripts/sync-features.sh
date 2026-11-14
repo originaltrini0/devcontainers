@@ -8,7 +8,7 @@ CHECK=0
 [ "${1:-}" = "--check" ] && CHECK=1
 
 # feature<TAB>canonical installer (empty = feature script not written yet)
-FEATURES=$'common\tinstall-common-tools.sh\nk8s-tools\t'
+FEATURES=$'common\tinstall-common-tools.sh\nk8s-tools\tinstall-k8s-tools.sh'
 
 printf '%s\n' "$FEATURES" | while IFS=$'\t' read -r feature installer; do
   src_dir="$ROOT/src/$feature"
