@@ -1,6 +1,6 @@
 {
   "id": "common",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "name": "Common",
   "description": "Org CLI tooling: pinned gh, glab, jq, ripgrep, plus a git safe-directory helper.",
   "options": {
