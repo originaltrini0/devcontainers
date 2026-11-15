@@ -2,7 +2,7 @@
   "id": "common",
   "version": "1.0.4",
   "name": "Common",
-  "description": "Org CLI tooling: pinned gh, glab, jq, ripgrep, git safe-directory helper, and the HTE internal CA trust install.",
+  "description": "Org CLI tooling: pinned gh, glab, jq, ripgrep, a git safe-directory helper, and the HTE root CA baked into the trust store.",
   "options": {
     "gh": {
       "type": "string",
@@ -20,15 +20,7 @@
   "installsAfter": [
     "ghcr.io/devcontainers/features/common-utils"
   ],
-  // Host-exported HTE root CA, already present from step-ca (~/.step/certs).
-  // Docker auto-creates a missing source dir, so hosts without it still build.
-  "mounts": [
-    "source=${localEnv:HOME}/.step/certs,target=/usr/local/share/ca-certificates/hte,type=bind,readonly"
-  ],
-  "postStartCommand": "/usr/local/share/hte-ca/update-trust.sh",
   "containerEnv": {
-    // Rebuilt from the distro bundle + HTE CA on every container start;
-    // exists from image build time so Node never errors on a missing path.
     "NODE_EXTRA_CA_CERTS": "/usr/local/share/hte-ca/node-ca.crt"
   }
 }
