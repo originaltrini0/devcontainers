@@ -71,17 +71,17 @@ jobs:
                 golangci-lint --version | grep -qF '$gl_ver'" ;;
           esac
 
-  # Feature-only stacks (terraform-tools) have no image to pull, so this job
-  # stands up a workspace against the *published* feature refs the template
-  # pins (feature tests only ever see local src/) and re-asserts the pins.
-  # Skips with a note until the first release publishes the refs, so the
+  # Feature-only stacks (terraform-tools, cloud-tools) have no image to pull,
+  # so this job stands up a workspace against the *published* feature refs the
+  # template pins (feature tests only ever see local src/) and re-asserts the
+  # pins. Skips with a note until the first release publishes the refs, so the
   # schedule stays green across the release boundary.
   features:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        template: [terraform]
+        template: [terraform, cloud]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
@@ -133,20 +133,32 @@ jobs:
         if: steps.published.outputs.skip != 'true'
         run: |
           set -euo pipefail
-          pin() { grep -oE "\\\$\{$1:-[^}]+}" "scripts/install-terraform-tools.sh" \
+          pin() { grep -oE "\\\$\{$1:-[^}]+}" "scripts/install-$2-tools.sh" \
             | head -n1 | sed -E 's/.*:-([^}]+)\}/\1/'; }
-          tf_ver="$(pin VERSION)"; tflint_ver="$(pin TFLINT_VERSION)"
-          tdocs_ver="$(pin TERRAFORM_DOCS_VERSION)"; tls_ver="$(pin TERRAFORM_LS_VERSION)"
-          trivy_ver="$(pin TRIVY_VERSION)"; pc_ver="$(pin PRE_COMMIT_VERSION)"
-          devcontainer exec --workspace-folder '${{ steps.work.outputs.work }}' -- bash -lc "
-            set -euo pipefail
-            grep -qF 'v$tf_ver' <<< \"\$(terraform version 2>&1)\"
-            ! command -v tofu
-            grep -qF '$tflint_ver' <<< \"\$(tflint --version 2>&1)\"
-            grep -qF 'v$tdocs_ver' <<< \"\$(terraform-docs --version 2>&1)\"
-            grep -qF '$tls_ver' <<< \"\$(terraform-ls version 2>&1)\"
-            grep -qF '$trivy_ver' <<< \"\$(trivy --version 2>&1)\"
-            grep -qF '$pc_ver' <<< \"\$(pre-commit --version 2>&1)\""
+          case '${{ matrix.template }}' in
+            terraform)
+              tf_ver="$(pin VERSION terraform)"; tflint_ver="$(pin TFLINT_VERSION terraform)"
+              tdocs_ver="$(pin TERRAFORM_DOCS_VERSION terraform)"; tls_ver="$(pin TERRAFORM_LS_VERSION terraform)"
+              trivy_ver="$(pin TRIVY_VERSION terraform)"; pc_ver="$(pin PRE_COMMIT_VERSION terraform)"
+              devcontainer exec --workspace-folder '${{ steps.work.outputs.work }}' -- bash -lc "
+                set -euo pipefail
+                grep -qF 'v$tf_ver' <<< \"\$(terraform version 2>&1)\"
+                ! command -v tofu
+                grep -qF '$tflint_ver' <<< \"\$(tflint --version 2>&1)\"
+                grep -qF 'v$tdocs_ver' <<< \"\$(terraform-docs --version 2>&1)\"
+                grep -qF '$tls_ver' <<< \"\$(terraform-ls version 2>&1)\"
+                grep -qF '$trivy_ver' <<< \"\$(trivy --version 2>&1)\"
+                grep -qF '$pc_ver' <<< \"\$(pre-commit --version 2>&1)\"" ;;
+            cloud)
+              aws_ver="$(pin AWS_VERSION cloud)"; az_ver="$(pin AZ_VERSION cloud)"
+              pwsh_ver="$(pin PWSH_VERSION cloud)"; gc_ver="$(pin GCLOUD_VERSION cloud)"
+              devcontainer exec --workspace-folder '${{ steps.work.outputs.work }}' -- bash -lc "
+                set -euo pipefail
+                grep -qF 'aws-cli/$aws_ver' <<< \"\$(aws --version 2>&1)\"
+                grep -qxF \"$az_ver\" <<< \"\$(az version --output tsv 2>&1 | cut -f1)\"
+                grep -qF '$pwsh_ver' <<< \"\$(pwsh --version 2>&1)\"
+                grep -qF 'Google Cloud SDK $gc_ver' <<< \"\$(gcloud version 2>&1)\"" ;;
+          esac
       - name: Skipping — published refs not present yet
         if: steps.published.outputs.skip == 'true'
-        run: echo "::notice::terraform-tools not published yet; skipping pin assertions"
+        run: echo "::notice::${{ matrix.template }} features not published yet; skipping pin assertions"

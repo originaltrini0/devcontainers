@@ -64,7 +64,7 @@ jobs:
   # devcontainer CLI needs a Docker daemon, so feature/template checks stay on
   # GitHub-hosted runners; only image builds use the cluster builder.
   features:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.leg.runner }}
     needs: sync-features
     strategy:
       fail-fast: false
@@ -72,27 +72,49 @@ jobs:
         leg:
           - feature: common
             short: ubuntu
+            runner: ubuntu-latest
             base: mcr.microsoft.com/devcontainers/base:ubuntu
           - feature: common
             short: debian
+            runner: ubuntu-latest
             base: mcr.microsoft.com/devcontainers/base:debian
           # The Ansible dev-tools image is Fedora-based (dnf), unlike the
           # Debian/Ubuntu bases — real-world coverage for pkg_install.
           - feature: common
             short: ansible-fedora
+            runner: ubuntu-latest
             base: ghcr.io/ansible/community-ansible-dev-tools:v26.4.4
           - feature: k8s-tools
             short: ubuntu
+            runner: ubuntu-latest
             base: mcr.microsoft.com/devcontainers/base:ubuntu
           - feature: k8s-tools
             short: debian
+            runner: ubuntu-latest
             base: mcr.microsoft.com/devcontainers/base:debian
           - feature: terraform-tools
             short: ubuntu
+            runner: ubuntu-latest
             base: mcr.microsoft.com/devcontainers/base:ubuntu
           - feature: terraform-tools
             short: debian
+            runner: ubuntu-latest
             base: mcr.microsoft.com/devcontainers/base:debian
+          - feature: cloud-tools
+            short: ubuntu
+            runner: ubuntu-latest
+            base: mcr.microsoft.com/devcontainers/base:ubuntu
+          - feature: cloud-tools
+            short: debian
+            runner: ubuntu-latest
+            base: mcr.microsoft.com/devcontainers/base:debian
+          # cloud-tools is the first feature whose artifacts are per-arch
+          # tarballs (aws aarch64 zip, az/pwsh arm64 builds, gcloud
+          # binary-arm64) — verify the arm64 path natively.
+          - feature: cloud-tools
+            short: arm64
+            runner: ubuntu-24.04-arm
+            base: mcr.microsoft.com/devcontainers/base:ubuntu
     name: features (${{ matrix.leg.feature }}-${{ matrix.leg.short }})
     steps:
       - uses: actions/checkout@v4
@@ -111,7 +133,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        template: [python, go, kubernetes, ansible, terraform]
+        template: [python, go, kubernetes, ansible, terraform, cloud]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -143,7 +165,7 @@ jobs:
           cfg="$work/$name/.devcontainer/devcontainer.json"
           sed -i -E \
             -e 's#"(ghcr\.io/originaltrini0/devcontainers/(python|go)):[^"]+"#"\1:ci"#g' \
-            -e 's#"(ghcr\.io/originaltrini0/devcontainers/(common|k8s-tools|terraform-tools)):[^"]+"#"./features/\2"#g' \
+            -e 's#"(ghcr\.io/originaltrini0/devcontainers/(common|k8s-tools|terraform-tools|cloud-tools)):[^"]+"#"./features/\2"#g' \
             "$cfg"
           devcontainer build --workspace-folder "$work/$name"
 

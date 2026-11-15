@@ -1,0 +1,35 @@
+{
+  "id": "cloud-tools",
+  "version": "1.0.6",
+  "name": "Cloud provider CLIs",
+  "description": "Pinned gcloud, AWS CLI v2, Azure CLI and PowerShell. Sole owner of these version pins; composable on any stack (e.g. terraform-tools + cloud-tools for GCP roots). Never mount host cloud config read-write — use read-only mounts or container-local config dirs.",
+  "options": {
+    "aws": {
+      "type": "string",
+      "proposals": ["2.40.3", "none"],
+      "default": "2.40.3",
+      "description": "AWS CLI v2 version (versioned zip, .sig verified); 'none' skips."
+    },
+    "az": {
+      "type": "string",
+      "proposals": ["2.92.0", "none"],
+      "default": "2.92.0",
+      "description": "Azure CLI version (standalone GitHub-release tarball); 'none' skips."
+    },
+    "pwsh": {
+      "type": "string",
+      "proposals": ["7.7.0", "none"],
+      "default": "7.7.0",
+      "description": "PowerShell version (self-contained tarball); 'none' skips."
+    },
+    "gcloud": {
+      "type": "string",
+      "proposals": ["593.0.0", "none"],
+      "default": "593.0.0",
+      "description": "Google Cloud SDK version (apt-only upstream; pinned via an apt-cache madison soft-match). 'none' skips."
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ]
+}

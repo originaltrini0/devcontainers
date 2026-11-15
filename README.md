@@ -37,10 +37,10 @@ Dockerfiles.
 
 ```
 images/{python,go}/          Dockerfiles (Phase 2/3)
-src/{common,k8s-tools,terraform-tools}/
+src/{common,k8s-tools,terraform-tools,cloud-tools}/
                              devcontainer-feature.json + install.sh + lib.sh
 test/<feature>/test.sh       feature version assertions
-templates/{python,go,kubernetes,ansible,terraform}/.devcontainer/
+templates/{python,go,kubernetes,ansible,terraform,cloud}/.devcontainer/
 scripts/                     canonical installers, lib.sh, sync/check tooling
 ```
 
@@ -78,6 +78,7 @@ Image builds must use the **repo root** as build context
 | Kubernetes | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.6`, `ghcr.io/originaltrini0/devcontainers/k8s-tools:1.0.6` — kubectl 1.35.2, talosctl 1.13.2, flux 2.10.0, helm 3.22.1, kustomize 5.8.3, sops 3.13.3, age 1.3.2, cilium 0.20.3, yq v4.54.3, step `none` (opt-in) |
 | Ansible | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `ghcr.io/originaltrini0/devcontainers/common:1.0.6` |
 | Terraform / OpenTofu | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.6`, `ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.6` — flavor `terraform` v1.17.2 (alt: `tofu` 1.13.9), tflint 0.66.0, terraform-docs 0.25.1, terraform-ls 0.39.1, trivy 0.76.2, pre-commit 4.7.0. The `terraform-tools` package is first published at the **next** release tag: `bump-version.sh` rewrites this ref before tagging, so the `1.0.2` pin below does not resolve in the registry until that release. |
+| Cloud CLI | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.6`, `ghcr.io/originaltrini0/devcontainers/cloud-tools:1.0.6` — aws 2.40.3, az 2.92.0, pwsh 7.7.0, gcloud 593.0.0 (apt soft-match, manual pin — no releases feed). Composable with any stack; compose with `terraform-tools` for cloud infra roots. `cloud-tools` is likewise first published at the **next** release tag. Mount cloud credentials read-only or use container-local config dirs — never a read-write host cloud config. |
 
 `1.0.1`/`1.0.2` changed no Dockerfiles: the images are content-identical to
 the multi-arch `v1.0.0` CI release (the `1.0.2` tags alias its manifest

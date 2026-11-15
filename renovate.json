@@ -252,6 +252,50 @@
       ],
       "datasource": "github-releases",
       "depNameTemplate": "pre-commit/pre-commit"
+    },
+    {
+      "description": "aws/aws-cli publishes tags, not GitHub Releases",
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{AWS_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"aws\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-tags",
+      "depNameTemplate": "aws/aws-cli"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{AZ_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"az\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "extractVersionTemplate": "^azure-cli-(?<version>.+)$",
+      "depNameTemplate": "Azure/azure-cli"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{PWSH_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"pwsh\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "PowerShell/PowerShell"
+    },
+    {
+      "description": "gcloud is apt-only (no releases feed); bump the pin manually and re-probe the apt dist soft-match",
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{GCLOUD_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"gcloud\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-tags",
+      "enabled": false,
+      "depNameTemplate": "GoogleCloudSdkManual"
     }
   ]
 }
