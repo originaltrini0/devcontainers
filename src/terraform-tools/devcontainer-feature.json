@@ -1,6 +1,6 @@
 {
   "id": "terraform-tools",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "name": "Terraform / OpenTofu tools",
   "description": "Pinned Terraform/OpenTofu CLI plus tflint, terraform-docs, terraform-ls, trivy, pre-commit. Sole owner of these version pins; per-project configs override options instead of forking an image. No cloud CLIs — see cloud-tools.",
   "options": {
