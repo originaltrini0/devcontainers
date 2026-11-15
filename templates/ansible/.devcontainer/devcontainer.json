@@ -5,7 +5,7 @@
   // `common` adds the org CLIs on top.
   "image": "ghcr.io/ansible/community-ansible-dev-tools:v26.4.4",
   "features": {
-    "ghcr.io/originaltrini0/devcontainers/common:1.0.4": {}
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.5": {}
   },
   // Ansible privileges are project-owned overrides, kept here as the pattern:
   // vault editing and inventory-wide SSH need root plus host networking.
