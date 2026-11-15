@@ -106,6 +106,99 @@ read/encrypt (`ansible-homelab-ops` and the four collections), per-cluster
 CLI pins + readable `SOPS_AGE_KEY_FILE` + kube/talos mounts (`k8s-prod`,
 `k8s-dev`, `k8s-dev-old`).
 
+## Onboarding a new project
+
+1. **Pick a stack** from the Current pins table — one row only. Go/Python use
+   the published `ghcr.io/originaltrini0/devcontainers/{go,python}` images;
+   Kubernetes on upstream `mcr.microsoft.com/devcontainers/base:ubuntu` +
+   `common`/`k8s-tools`; Ansible on upstream
+   `ghcr.io/ansible/community-ansible-dev-tools`. Never create a project
+   Dockerfile or compose file for dev purposes.
+2. **Copy the template** into the project and set `"name"` to the project
+   name — not the stack name (gotten wrong in the `finscribe` migration):
+   `cp -r templates/<stack>/.devcontainer/ <project>/.devcontainer/`
+3. **Pin exact `X.Y.Z`** image and feature tags (Versioning and
+   reproducibility); never `X`, `X.Y`, `latest`. Verify tags exist before
+   committing:
+   `docker manifest inspect ghcr.io/originaltrini0/devcontainers/<image>:<X.Y.Z>`
+4. **Per-cluster Kubernetes CLI divergence** goes only in `k8s-tools`
+   feature options — never a custom image or hand-pinned binaries.
+5. **Project glue** lives in the project config: host mounts (kilo
+   config/share dirs, `/run/host-services/ssh-auth.sock`, `~/.ssh`,
+   `~/.config/gh`, `~/.config/glab-cli`), `remoteUser: vscode`,
+   `containerEnv.SSH_AUTH_SOCK`, VS Code extensions/settings, and for
+   host-mounted workspaces a `postCreateCommand` running
+   `git config --global --add safe.directory /workspaces/<project>`
+   (missed in `finscribe`). Every bind-mount source must already exist on
+   the host, or Docker fails the container.
+6. **Commit `devcontainer-lock.json`** alongside `devcontainer.json` (the
+   Migrated-projects contract). `devcontainer` CLI v0.90.0 has no `lock`
+   subcommand: the lockfile is generated on first `devcontainer up`,
+   refreshed with `devcontainer upgrade`, or copied verbatim from a sibling
+   project with identical feature refs (identical refs resolve identical
+   digests).
+7. **Validate from this repo**: `scripts/validate-projects.sh` (scans
+   `~/code/projects` by default, asserts refs are on the allowlist and
+   published; `--offline`/`--allow-missing` exist). It must report the
+   project's refs — confirm the checked-ref count grew; a wrong `--dirs`
+   root silently scans 0 refs.
+8. **Update this README**: add the project's row to the Migrated projects
+   table and record validation results in the matrix sentence below it.
+9. **Commit `.devcontainer/` in the project repo**: projects live in
+   separate repos, and CI here can only validate `templates/`.
+
+## Maintenance
+
+### Tool version bumps (everyday)
+
+- Canonical pins live in `scripts/install-{common,go,python,k8s}-tools.sh`;
+  each feature's option defaults in `src/<feature>/devcontainer-feature.json`
+  mirror them. Renovate's regex manager updates both in one PR (the "tool
+  pins" group, scheduled Mondays); `renovate.json` describes the mapping.
+- Never hand-edit `src/<feature>/install.sh` or vendored `lib.sh` — they are
+  vendored copies. Edit the canonical script under `scripts/`, then run
+  `scripts/sync-features.sh` to re-vendor; CI `sync-features.sh --check`
+  fails on drift.
+- If Renovate misses a pin: edit the canonical script and feature-option
+  default together in one PR, then `sync-features.sh`.
+- Merging to `main` triggers CI (build + feature tests) but publishes
+  nothing; a bump is usable by projects only after a release:
+  `scripts/bump-version.sh X.Y.Z`, commit, tag `vX.Y.Z`, push tag (see
+  Release checklist). Feature versions are immutable — a fix after publish
+  requires the next version.
+
+### System version
+
+- `scripts/bump-version.sh X.Y.Z` rewrites every owned ref
+  (`ghcr.io/originaltrini0/devcontainers/{common,k8s-tools,python,go}`) in
+  feature manifests, template refs and this README in one step; `--check` is
+  the CI consistency gate. Tool pins are not touched — Renovate owns those.
+
+### Base images
+
+- Upstream base image tags (Ansible `community-ansible-dev-tools`,
+  `mcr.microsoft.com/devcontainers/*`) are Renovate-managed via the
+  devcontainer/dockerfile managers ("base images" group, no automerge);
+  `ARG GO_VERSION`-style args in `images/{python,go}/Dockerfile` bump the
+  same way.
+
+### Refreshing projects after a release
+
+- Our own `ghcr.io/originaltrini0/devcontainers/*` tags are excluded from
+  Renovate everywhere; each project repo bumps its exact pins manually: edit
+  `.devcontainer/devcontainer.json`, refresh `devcontainer-lock.json`
+  (`devcontainer upgrade`, CLI v0.90.0), then run
+  `scripts/validate-projects.sh` from this repo to confirm the new tags are
+  published and allowlisted. Rollback is revert tag pin + lockfile.
+
+### Health checks
+
+- Scheduled `smoke.yml` re-pulls the exact published pins and asserts tool
+  versions + multi-arch manifests (see Release and CI); run it manually
+  (workflow_dispatch) after any release.
+- `validate-projects.sh` (`--offline`/`--allow-missing`) is the local drift
+  check across `~/code/projects`.
+
 ## Registry and visibility
 
 - Registry: GHCR under `originaltrini0`, repository path
