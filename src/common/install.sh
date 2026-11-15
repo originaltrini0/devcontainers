@@ -31,6 +31,11 @@ if [ "$NODE_VERSION" != "none" ]; then
   NODE_ARCH="$( [ "$ARCH" = amd64 ] && printf 'x64' || printf 'arm64' )"
   download_extract "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz" \
     --strip-components=1 -C /usr/local
+  # Fedora (ansible dev-tools image) does not ship libatomic, which the
+  # official glibc node binary links against; the deb name is libatomic1.
+  if command -v ldconfig >/dev/null 2>&1 && ! ldconfig -p | grep -q 'libatomic\.so\.1'; then
+    pkg_install libatomic >/dev/null 2>&1 || pkg_install libatomic1
+  fi
 fi
 
 gh --version
