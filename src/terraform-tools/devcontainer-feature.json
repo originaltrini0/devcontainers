@@ -1,0 +1,53 @@
+{
+  "id": "terraform-tools",
+  "version": "1.0.2",
+  "name": "Terraform / OpenTofu tools",
+  "description": "Pinned Terraform/OpenTofu CLI plus tflint, terraform-docs, terraform-ls, trivy, pre-commit. Sole owner of these version pins; per-project configs override options instead of forking an image. No cloud CLIs — see cloud-tools.",
+  "options": {
+    "flavor": {
+      "type": "string",
+      "proposals": ["terraform", "tofu"],
+      "default": "terraform",
+      "description": "Engine CLI: hashicorp/terraform or opentofu/tofu. Selects exactly one; never read from an ambient env var."
+    },
+    "version": {
+      "type": "string",
+      "proposals": ["1.17.2", "1.13.9", "none"],
+      "default": "1.17.2",
+      "description": "Engine version (interpret per flavor; the default is a Terraform pin). 'none' skips the engine."
+    },
+    "tflint": {
+      "type": "string",
+      "proposals": ["0.66.0", "none"],
+      "default": "0.66.0",
+      "description": "tflint version; 'none' skips."
+    },
+    "terraform-docs": {
+      "type": "string",
+      "proposals": ["0.25.1", "none"],
+      "default": "0.25.1",
+      "description": "terraform-docs version; 'none' skips."
+    },
+    "terraform-ls": {
+      "type": "string",
+      "proposals": ["0.39.1", "none"],
+      "default": "0.39.1",
+      "description": "terraform-ls language server version; 'none' skips."
+    },
+    "trivy": {
+      "type": "string",
+      "proposals": ["0.76.2", "none"],
+      "default": "0.76.2",
+      "description": "trivy config scanner version; 'none' skips."
+    },
+    "pre-commit": {
+      "type": "string",
+      "proposals": ["4.7.0", "none"],
+      "default": "4.7.0",
+      "description": "pre-commit version (installed in its own venv, PEP 668); 'none' skips."
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ]
+}

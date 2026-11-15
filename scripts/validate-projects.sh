@@ -54,7 +54,7 @@ PY
 }
 
 # Owned refs must be exact X.Y.Z — never major/latest aliases (reproducibility).
-OURS='^ghcr\.io/originaltrini0/devcontainers/(python|go|common|k8s-tools):(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'
+OURS='^ghcr\.io/originaltrini0/devcontainers/(python|go|common|k8s-tools|terraform-tools):(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'
 ALLOWED_UPSTREAM=(
   '^mcr\.microsoft\.com/devcontainers/base:ubuntu$'
   '^ghcr\.io/ansible/community-ansible-dev-tools:v[0-9]+\.[0-9]+\.[0-9]+$'
@@ -99,7 +99,9 @@ for dir in "${DIRS[@]}"; do
         fail=1
       fi
     done <<< "$refs"
-  done < <(find "$dir" -mindepth 3 -maxdepth 4 -path '*/.devcontainer/devcontainer.json' | sort)
+  # maxdepth 6: grouped library repos (terraform-modules/<repo>/.devcontainer)
+  # nest one level deeper than flat projects.
+  done < <(find "$dir" -mindepth 3 -maxdepth 6 -path '*/.devcontainer/devcontainer.json' | sort)
 done
 
 echo "validate-projects.sh: checked $checked refs, $([ "$fail" = 0 ] && echo OK || echo FAILURES)"

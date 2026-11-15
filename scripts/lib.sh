@@ -35,11 +35,49 @@ download_file() {
   chmod 0755 "$dest"
 }
 
+# download_unzip URL DEST_DIR [SHA256] — download a zip release (terraform,
+# terraform-ls, tflint ship single-binary zips) and unpack it into DEST_DIR.
+# Requires `unzip` on PATH; callers pkg_install it first. Only the extracted
+# entries are chmod'd — never a glob over DEST_DIR.
+download_unzip() {
+  local url="$1" dest_dir="$2" expected="${3:-}" tmp files entry
+  tmp="$(mktemp)"
+  if ! download_file "$url" "$tmp" "$expected"; then
+    rm -f "$tmp"
+    return 1
+  fi
+  files="$(unzip -Z1 "$tmp")"
+  if ! unzip -o -q "$tmp" -d "$dest_dir"; then
+    rm -f "$tmp"
+    return 1
+  fi
+  rm -f "$tmp"
+  for entry in $files; do
+    [ -f "$dest_dir/$entry" ] && chmod 0755 "$dest_dir/$entry"
+  done
+}
+
 # download_extract URL [TAR ARGS...] — pipe an archive release straight into tar.
 download_extract() {
   local url="$1"
   shift
   curl -fsSL --retry 3 "$url" | tar -xz "$@"
+}
+
+# assert_version LABEL NEEDLE CMD... — run CMD and match NEEDLE against its
+# captured output. Here-strings only: `cmd | grep -q` races SIGPIPE against
+# the writer under pipefail (buildx exit 141).
+assert_version() {
+  local label="$1" needle="$2" out
+  shift 2
+  if ! out="$("$@" 2>&1)"; then
+    echo "lib.sh: $label failed to run: $out" >&2
+    return 1
+  fi
+  grep -qF "$needle" <<< "$out" || {
+    echo "lib.sh: $label does not report $needle: $out" >&2
+    return 1
+  }
 }
 
 add_safe_directory() {

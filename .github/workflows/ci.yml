@@ -87,6 +87,12 @@ jobs:
           - feature: k8s-tools
             short: debian
             base: mcr.microsoft.com/devcontainers/base:debian
+          - feature: terraform-tools
+            short: ubuntu
+            base: mcr.microsoft.com/devcontainers/base:ubuntu
+          - feature: terraform-tools
+            short: debian
+            base: mcr.microsoft.com/devcontainers/base:debian
     name: features (${{ matrix.leg.feature }}-${{ matrix.leg.short }})
     steps:
       - uses: actions/checkout@v4
@@ -96,7 +102,7 @@ jobs:
       - run: npm install -g @devcontainers/cli
       - name: Test ${{ matrix.leg.feature }} on ${{ matrix.leg.base }}
         run: >-
-          devcontainer features test -f '${{ matrix.leg.feature }}' --skip-scenarios
+          devcontainer features test -f '${{ matrix.leg.feature }}'
           --base-image '${{ matrix.leg.base }}'
 
   templates:
@@ -105,7 +111,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        template: [python, go, kubernetes, ansible]
+        template: [python, go, kubernetes, ansible, terraform]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -137,7 +143,7 @@ jobs:
           cfg="$work/$name/.devcontainer/devcontainer.json"
           sed -i -E \
             -e 's#"(ghcr\.io/originaltrini0/devcontainers/(python|go)):[^"]+"#"\1:ci"#g' \
-            -e 's#"(ghcr\.io/originaltrini0/devcontainers/(common|k8s-tools)):[^"]+"#"./features/\2"#g' \
+            -e 's#"(ghcr\.io/originaltrini0/devcontainers/(common|k8s-tools|terraform-tools)):[^"]+"#"./features/\2"#g' \
             "$cfg"
           devcontainer build --workspace-folder "$work/$name"
 

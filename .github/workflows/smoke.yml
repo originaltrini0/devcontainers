@@ -70,3 +70,83 @@ jobs:
                 go version | grep -qF 'go1.27'
                 golangci-lint --version | grep -qF '$gl_ver'" ;;
           esac
+
+  # Feature-only stacks (terraform-tools) have no image to pull, so this job
+  # stands up a workspace against the *published* feature refs the template
+  # pins (feature tests only ever see local src/) and re-asserts the pins.
+  # Skips with a note until the first release publishes the refs, so the
+  # schedule stays green across the release boundary.
+  features:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        template: [terraform]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Published feature refs must resolve to skip the guard
+        id: published
+        run: |
+          set -euo pipefail
+          skip=false
+          for ref in $(grep -oE 'ghcr\.io/originaltrini0/devcontainers/[a-z-]+:[0-9]+\.[0-9]+\.[0-9]+' \
+            "templates/${{ matrix.template }}/.devcontainer/devcontainer.json" | sort -u); do
+            docker manifest inspect "$ref" > /dev/null 2>&1 || skip=true
+          done
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        if: steps.published.outputs.skip != 'true'
+        with:
+          node-version: 22
+      - if: steps.published.outputs.skip != 'true'
+        run: npm install -g @devcontainers/cli
+      - name: Sanitize a throwaway copy (host bind mounts do not exist on runners)
+        if: steps.published.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          name='${{ matrix.template }}'
+          work="$RUNNER_TEMP/feature-smoke/$name"
+          rm -rf "$work"; mkdir -p "$work/.devcontainer"
+          cp "templates/$name/.devcontainer/devcontainer.json" "$work/.devcontainer/"
+          rm -f "$work/.devcontainer/devcontainer-lock.json"
+          python3 - "$work/.devcontainer/devcontainer.json" <<'PY'
+          import json, re, sys
+          path = sys.argv[1]
+          text = open(path).read()
+          stripped = re.sub(r'"[^"]*"|//[^\n]*',
+                            lambda m: m.group(0) if m.group(0).startswith('"') else '', text)
+          data = json.loads(stripped)
+          data.pop("mounts", None)
+          open(path, "w").write(json.dumps(data))
+          PY
+          echo "work=$work" >> "$GITHUB_OUTPUT"
+        id: work
+      - name: Stand up templates/${{ matrix.template }} on published refs
+        if: steps.published.outputs.skip != 'true'
+        run: devcontainer up --workspace-folder '${{ steps.work.outputs.work }}'
+      - name: Assert published pins
+        if: steps.published.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          pin() { grep -oE "\\\$\{$1:-[^}]+}" "scripts/install-terraform-tools.sh" \
+            | head -n1 | sed -E 's/.*:-([^}]+)\}/\1/'; }
+          tf_ver="$(pin VERSION)"; tflint_ver="$(pin TFLINT_VERSION)"
+          tdocs_ver="$(pin TERRAFORM_DOCS_VERSION)"; tls_ver="$(pin TERRAFORM_LS_VERSION)"
+          trivy_ver="$(pin TRIVY_VERSION)"; pc_ver="$(pin PRE_COMMIT_VERSION)"
+          devcontainer exec --workspace-folder '${{ steps.work.outputs.work }}' -- bash -lc "
+            set -euo pipefail
+            grep -qF 'v$tf_ver' <<< \"\$(terraform version 2>&1)\"
+            ! command -v tofu
+            grep -qF '$tflint_ver' <<< \"\$(tflint --version 2>&1)\"
+            grep -qF 'v$tdocs_ver' <<< \"\$(terraform-docs --version 2>&1)\"
+            grep -qF '$tls_ver' <<< \"\$(terraform-ls version 2>&1)\"
+            grep -qF '$trivy_ver' <<< \"\$(trivy --version 2>&1)\"
+            grep -qF '$pc_ver' <<< \"\$(pre-commit --version 2>&1)\""
+      - name: Skipping — published refs not present yet
+        if: steps.published.outputs.skip == 'true'
+        run: echo "::notice::terraform-tools not published yet; skipping pin assertions"

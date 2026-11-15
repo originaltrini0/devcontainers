@@ -1,0 +1,54 @@
+{
+  "name": "terraform",
+  // No custom image: terraform-tools is the sole owner of the CLI pins, so a
+  // baked image would only duplicate them. One engine per project via the
+  // `flavor` option — e.g. an OpenTofu project:
+  //   "ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.2": {
+  //     "flavor": "tofu", "version": "1.13.9"
+  //   }
+  // Omitting options entirely gets Terraform 1.17.2 plus tflint 0.66.0,
+  // terraform-docs 0.25.1, terraform-ls 0.39.1, trivy 0.76.2, pre-commit 4.7.0.
+  // The feature ships with the next release tag; bump-version.sh rewrites the
+  // pins below when the release line moves.
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.2": {},
+    "ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.2": {}
+  },
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "SSH_AUTH_SOCK": "/run/host-services/ssh-auth.sock"
+    // Per-project cloud/infra env lives here, sourced from the host so nothing
+    // is committed — e.g. a Proxmox root config:
+    // "PROXMOX_VE_ENDPOINT": "${localEnv:PROXMOX_VE_ENDPOINT}",
+    // "PROXMOX_VE_API_TOKEN": "${localEnv:PROXMOX_VE_API_TOKEN}",
+    // Never set PROXMOX_VE_INSECURE wholesale, and never bake credentials or
+    // terraform.tfvars into images or features.
+  },
+  // Bind-mount host config dirs so VCS access works inside the container.
+  // Every mount source must already exist on the host — Docker fails the whole
+  // container if one is missing.
+  "mounts": [
+    // Kilo Code configuration
+    "source=${localEnv:HOME}/.config/kilo,target=/home/vscode/.config/kilo,type=bind,readonly",
+    "source=${localEnv:HOME}/.local/share/kilo,target=/home/vscode/.local/share/kilo,type=bind,consistency=cached",
+    // Host SSH agent + config/known_hosts. sk-* keys live on the YubiKey, so only
+    // the agent socket can sign; the .ssh mount provides ssh config only.
+    "source=/run/host-services/ssh-auth.sock,target=/run/host-services/ssh-auth.sock,type=bind",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
+    // gh/glab API tokens (glab/gh auth login) persist across container rebuilds.
+    "source=${localEnv:HOME}/.config/gh,target=/home/vscode/.config/gh,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/glab-cli,target=/home/vscode/.config/glab-cli,type=bind,consistency=cached"
+  ],
+  // Project-owned: add `git config --global --add safe.directory
+  // /workspaces/<project>` as postCreateCommand when needed.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "kilocode.kilo-code",
+        "hashicorp.terraform",
+        "redhat.vscode-yaml"
+      ]
+    }
+  }
+}

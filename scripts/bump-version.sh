@@ -11,8 +11,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+# Feature names are derived from src/ so a new feature needs no edit here.
+FEATURE_NAMES="$(ls src | tr '\n' '|' | sed 's/|$//')"
 # Matches ghcr.io/originaltrini0/devcontainers/<name>:<X.Y.Z> in any file.
-REF_RE='(ghcr\.io/originaltrini0/devcontainers/(common|k8s-tools|python|go):)[0-9]+\.[0-9]+\.[0-9]+'
+REF_RE="(ghcr\.io/originaltrini0/devcontainers/(${FEATURE_NAMES}|python|go):)[0-9]+\.[0-9]+\.[0-9]+"
 VER_RE='^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'
 
 check() {
@@ -37,7 +39,7 @@ check() {
     if [ "$v" != "$version" ]; then
       echo "drift: template feature ref $ref != $version" >&2; fail=1
     fi
-  done < <(grep -rhoE 'ghcr\.io/originaltrini0/devcontainers/(common|k8s-tools):[0-9]+\.[0-9]+\.[0-9]+' templates/ README.md || true)
+  done < <(grep -rhoE "ghcr\.io/originaltrini0/devcontainers/(${FEATURE_NAMES}):[0-9]+\.[0-9]+\.[0-9]+" templates/ README.md || true)
   if [ "$fail" = 0 ]; then
     echo "bump-version.sh: consistent at $version"
   fi
@@ -67,7 +69,7 @@ check || echo "bump-version.sh: overwriting an inconsistent state" >&2
 in_place() { # <sed-script> <file>
   sed -E "$1" "$2" > "$2.bump.tmp" && mv "$2.bump.tmp" "$2"
 }
-for f in src/common/devcontainer-feature.json src/k8s-tools/devcontainer-feature.json; do
+for f in src/*/devcontainer-feature.json; do
   in_place "s/\"version\": \"[0-9]+\.[0-9]+\.[0-9]+\"/\"version\": \"$version\"/" "$f"
 done
 grep -rlE "$REF_RE" templates README.md | while IFS= read -r f; do

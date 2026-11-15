@@ -169,9 +169,79 @@
         "\\$\\{YQ_VERSION:-(?<currentValue>[^\"}]+)\\}",
         "\"yq\": \\{[^}]*\"default\": \"(?<currentValue>v?[0-9][^\"]+)\""
       ],
+        "datasource": "github-releases",
+        "versioning": "semver",
+        "depNameTemplate": "mikefarah/yq"
+    },
+    {
+      "customType": "regex",
+      "description": "Terraform engine pin in the canonical installer (the `version` option default is bumped by the manifest-scoped manager below)",
+      "fileMatch": ["^scripts/install-.*\\.sh$"],
+      "matchStrings": [
+        "\\$\\{VERSION:-(?<currentValue>[^\"}]+)\\}"
+      ],
       "datasource": "github-releases",
-      "versioning": "semver",
-      "depNameTemplate": "mikefarah/yq"
+      "depNameTemplate": "hashicorp/terraform"
+    },
+    {
+      "customType": "regex",
+      "description": "Terraform `version` option default in the terraform-tools manifest; scoped so no other feature's options are touched",
+      "fileMatch": ["^src/terraform-tools/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\"version\": \\{[^}]*\"default\": \"(?<currentValue>[0-9][^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "hashicorp/terraform"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{TFLINT_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"tflint\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "Terraform-linters/tflint"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{TERRAFORM_DOCS_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"terraform-docs\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "terraform-docs/terraform-docs"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{TERRAFORM_LS_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"terraform-ls\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "hashicorp/terraform-ls"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{TRIVY_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"trivy\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "aquasecurity/trivy"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{PRE_COMMIT_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"pre-commit\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "pre-commit/pre-commit"
     }
   ]
 }

@@ -45,16 +45,18 @@ if [ "$STEP_VERSION" != "none" ]; then
 # `step-cli_<ver>_linux_<arch>` name) with the binary at <dir>/bin/step.
 download_extract "https://github.com/smallstep/cli/releases/download/v${STEP_VERSION}/step_linux_${STEP_VERSION}_${ARCH}.tar.gz" \
     --strip-components=2 -C /usr/local/bin "step_${STEP_VERSION}/bin/step"
-  step version
+  assert_version step "${STEP_VERSION}" step version
 fi
 
-kubectl version --client
-talosctl version --client
-flux --version
-helm version --short
-kustomize version
-sops --version | head -n1
-age --version
+# Per-command capture via assert_version (lib.sh): an accumulating log or a
+# `cmd | grep -q` pipe can mask a failure / race SIGPIPE under pipefail.
+assert_version kubectl "v${KUBECTL_VERSION}" kubectl version --client
+assert_version talosctl "${TALOS_VERSION}" talosctl version --client
+assert_version flux "${FLUX_VERSION}" flux --version
+assert_version helm "v${HELM_VERSION}" helm version --short
+assert_version kustomize "v${KUSTOMIZE_VERSION}" kustomize version
+assert_version sops "${SOPS_VERSION}" sops --version
+assert_version age "v${AGE_VERSION}" age --version
 command -v age-keygen
-cilium version --client
-yq --version
+assert_version cilium "${CILIUM_VERSION}" cilium version --client
+assert_version yq "${YQ_VERSION}" yq --version

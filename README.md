@@ -19,10 +19,13 @@ Dockerfiles.
   `mcr.microsoft.com/devcontainers/base:ubuntu`; Ansible on the upstream
   `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4`.
 - **Features own shared tooling and version overrides.** `common` (gh, glab,
-  jq, ripgrep, git safe-directory helper) and `k8s-tools` (kubectl, talosctl,
-  flux, helm, kustomize, sops, age, cilium, yq, step-opt-in). `k8s-tools` is
-  the sole owner of Kubernetes CLI version pins — there is no baked image
-  baseline to drift from.
+  jq, ripgrep, git safe-directory helper), `k8s-tools` (kubectl, talosctl,
+  flux, helm, kustomize, sops, age, cilium, yq, step-opt-in) and
+  `terraform-tools` (terraform/tofu engine via a `flavor` selector plus
+  tflint, terraform-docs, terraform-ls, trivy, pre-commit). Each stack feature
+  is the sole owner of its CLI version pins — there is no baked image baseline
+  to drift from. `terraform-tools` is not published yet; it ships with the
+  next release tag.
 - **Projects own environment glue**: host mounts, `runArgs` (e.g. Ansible
   `--network=host`), VS Code extensions, `postCreateCommand`, secret-path
   mounts. Nothing project-specific is baked into an image or feature.
@@ -33,9 +36,10 @@ Dockerfiles.
 
 ```
 images/{python,go}/          Dockerfiles (Phase 2/3)
-src/{common,k8s-tools}/      devcontainer-feature.json + install.sh + lib.sh
+src/{common,k8s-tools,terraform-tools}/
+                             devcontainer-feature.json + install.sh + lib.sh
 test/<feature>/test.sh       feature version assertions
-templates/{python,go,kubernetes,ansible}/.devcontainer/
+templates/{python,go,kubernetes,ansible,terraform}/.devcontainer/
 scripts/                     canonical installers, lib.sh, sync/check tooling
 ```
 
@@ -68,10 +72,11 @@ Image builds must use the **repo root** as build context
 
 | Stack | Image / base | Features (defaults) |
 |-------|--------------|---------------------|
-| Python | `ghcr.io/originaltrini0/devcontainers/python:1.0.2` | `common:1.0.2` — gh 2.104.0, glab 1.130.0; image: uv 0.13.8, ruff 0.17.5, pytest 9.2.0 |
-| Go | `ghcr.io/originaltrini0/devcontainers/go:1.0.2` | `common:1.0.2`; image: gopls v0.24.0, dlv v1.27.2, staticcheck v0.8.2, gofumpt v0.12.0, goimports v0.52.0, govulncheck v1.9.0, gotest v0.0.7, air v1.67.4, golangci-lint 2.15.0 |
-| Kubernetes | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.2`, `k8s-tools:1.0.2` — kubectl 1.35.2, talosctl 1.13.2, flux 2.10.0, helm 3.22.1, kustomize 5.8.3, sops 3.13.3, age 1.3.2, cilium 0.20.3, yq v4.54.3, step `none` (opt-in) |
-| Ansible | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `common:1.0.2` |
+| Python | `ghcr.io/originaltrini0/devcontainers/python:1.0.2` | `ghcr.io/originaltrini0/devcontainers/common:1.0.2` — gh 2.104.0, glab 1.130.0; image: uv 0.13.8, ruff 0.17.5, pytest 9.2.0 |
+| Go | `ghcr.io/originaltrini0/devcontainers/go:1.0.2` | `ghcr.io/originaltrini0/devcontainers/common:1.0.2`; image: gopls v0.24.0, dlv v1.27.2, staticcheck v0.8.2, gofumpt v0.12.0, goimports v0.52.0, govulncheck v1.9.0, gotest v0.0.7, air v1.67.4, golangci-lint 2.15.0 |
+| Kubernetes | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.2`, `ghcr.io/originaltrini0/devcontainers/k8s-tools:1.0.2` — kubectl 1.35.2, talosctl 1.13.2, flux 2.10.0, helm 3.22.1, kustomize 5.8.3, sops 3.13.3, age 1.3.2, cilium 0.20.3, yq v4.54.3, step `none` (opt-in) |
+| Ansible | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `ghcr.io/originaltrini0/devcontainers/common:1.0.2` |
+| Terraform / OpenTofu | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.2`, `ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.2` — flavor `terraform` v1.17.2 (alt: `tofu` 1.13.9), tflint 0.66.0, terraform-docs 0.25.1, terraform-ls 0.39.1, trivy 0.76.2, pre-commit 4.7.0. The `terraform-tools` package is first published at the **next** release tag: `bump-version.sh` rewrites this ref before tagging, so the `1.0.2` pin below does not resolve in the registry until that release. |
 
 `1.0.1`/`1.0.2` changed no Dockerfiles: the images are content-identical to
 the multi-arch `v1.0.0` CI release (the `1.0.2` tags alias its manifest
@@ -170,7 +175,8 @@ CLI pins + readable `SOPS_AGE_KEY_FILE` + kube/talos mounts (`k8s-prod`,
 ### System version
 
 - `scripts/bump-version.sh X.Y.Z` rewrites every owned ref
-  (`ghcr.io/originaltrini0/devcontainers/{common,k8s-tools,python,go}`) in
+  (`ghcr.io/originaltrini0/devcontainers/<feature|image>:X.Y.Z` — feature
+  names are derived from `ls src`, so a new feature needs no edit here) in
   feature manifests, template refs and this README in one step; `--check` is
   the CI consistency gate. Tool pins are not touched — Renovate owns those.
 
@@ -224,7 +230,8 @@ CLI pins + readable `SOPS_AGE_KEY_FILE` + kube/talos mounts (`k8s-prod`,
    (`X.Y.Z` / `X` / `X.Y` / `latest`) via the shared BuildKit worker and
    publishes the feature collection (`devcontainer features publish src`);
    never re-issue an already-published feature version.
-4. First release of a new package (`go`, `k8s-tools`): toggle its GHCR package
+4. First release of a new package (`go`, `k8s-tools`, `terraform-tools`):
+   toggle its GHCR package
    visibility to public in org settings — workflow-created packages default to
    private.
 5. Projects bump exact pins via Renovate; commit refreshed lockfiles.

@@ -1,0 +1,11 @@
+{
+  "tofu-flavor": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+      "terraform-tools": {
+        "flavor": "tofu",
+        "version": "1.13.9"
+      }
+    }
+  }
+}
