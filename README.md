@@ -19,7 +19,8 @@ Dockerfiles.
   `mcr.microsoft.com/devcontainers/base:ubuntu`; Ansible on the upstream
   `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4`.
 - **Features own shared tooling and version overrides.** `common` (gh, glab,
-  jq, ripgrep, git safe-directory helper), `k8s-tools` (kubectl, talosctl,
+  jq, ripgrep, Node.js LTS with npm/npx for Kilo Code MCP servers, git
+  safe-directory helper), `k8s-tools` (kubectl, talosctl,
   flux, helm, kustomize, sops, age, cilium, yq, step-opt-in) and
   `terraform-tools` (terraform/tofu engine via a `flavor` selector plus
   tflint, terraform-docs, terraform-ls, trivy, pre-commit). Each stack feature
@@ -72,7 +73,7 @@ Image builds must use the **repo root** as build context
 
 | Stack | Image / base | Features (defaults) |
 |-------|--------------|---------------------|
-| Python | `ghcr.io/originaltrini0/devcontainers/python:1.0.4` | `ghcr.io/originaltrini0/devcontainers/common:1.0.4` — gh 2.104.0, glab 1.130.0; image: uv 0.13.8, ruff 0.17.5, pytest 9.2.0 |
+| Python | `ghcr.io/originaltrini0/devcontainers/python:1.0.4` | `ghcr.io/originaltrini0/devcontainers/common:1.0.4` — gh 2.104.0, glab 1.130.0, node 26.13.1; image: uv 0.13.8, ruff 0.17.5, pytest 9.2.0 |
 | Go | `ghcr.io/originaltrini0/devcontainers/go:1.0.4` | `ghcr.io/originaltrini0/devcontainers/common:1.0.4`; image: gopls v0.24.0, dlv v1.27.2, staticcheck v0.8.2, gofumpt v0.12.0, goimports v0.52.0, govulncheck v1.9.0, gotest v0.0.7, air v1.67.4, golangci-lint 2.15.0 |
 | Kubernetes | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.4`, `ghcr.io/originaltrini0/devcontainers/k8s-tools:1.0.4` — kubectl 1.35.2, talosctl 1.13.2, flux 2.10.0, helm 3.22.1, kustomize 5.8.3, sops 3.13.3, age 1.3.2, cilium 0.20.3, yq v4.54.3, step `none` (opt-in) |
 | Ansible | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `ghcr.io/originaltrini0/devcontainers/common:1.0.4` |

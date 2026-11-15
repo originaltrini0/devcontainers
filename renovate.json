@@ -86,6 +86,16 @@
       "customType": "regex",
       "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
       "matchStrings": [
+        "\\$\\{NODE_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"node\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "node",
+      "depNameTemplate": "node"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
         "\\$\\{KUBECTL_VERSION:-(?<currentValue>[^\"}]+)\\}",
         "\"kubectl\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
       ],

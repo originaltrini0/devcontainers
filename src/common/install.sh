@@ -8,6 +8,7 @@ set -euo pipefail
 ARCH="$(detect_arch)"
 GH_VERSION="$(option_value "${OPTIONS:-}" gh "${GH_VERSION:-2.104.0}")"
 GLAB_VERSION="$(option_value "${OPTIONS:-}" glab "${GLAB_VERSION:-1.130.0}")"
+NODE_VERSION="$(option_value "${OPTIONS:-}" node "${NODE_VERSION:-26.13.1}")"
 
 # jq/ripgrep come from the distro repo on every supported base. The Ansible
 # upstream image is Fedora (dnf), the rest are Debian/Ubuntu (apt); pkg_install
@@ -22,10 +23,25 @@ download_extract "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh
 download_extract "https://gitlab.com/gitlab-org/cli/-/releases/v${GLAB_VERSION}/downloads/glab_${GLAB_VERSION}_linux_${ARCH}.tar.gz" \
   --strip-components=1 -C /usr/local/bin "bin/glab"
 
+# Kilo Code requirement: local MCP servers (`npx -y <pkg>`) and the
+# `npx --yes @kilocode/cli` launcher need node/npm/npx in the container; none
+# of our four bases ship them (verified by docker run on base/python/go/ansible).
+# nodejs.org tarballs use x64/arm64, not the amd64/arm64 of detect_arch.
+if [ "$NODE_VERSION" != "none" ]; then
+  NODE_ARCH="$( [ "$ARCH" = amd64 ] && printf 'x64' || printf 'arm64' )"
+  download_extract "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz" \
+    --strip-components=1 -C /usr/local
+fi
+
 gh --version
 glab --version
 jq --version
 rg --version
+if [ "$NODE_VERSION" != "none" ]; then
+  assert_version node "v${NODE_VERSION}" node --version
+  npm --version
+  npx --version
+fi
 
 # HTE root CA (public trust anchor, same cert step-ca exports to ~/.step/certs
 # on the host). Baked into the image so curl/git/python and any Node tool via

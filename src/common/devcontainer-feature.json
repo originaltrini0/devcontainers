@@ -2,7 +2,7 @@
   "id": "common",
   "version": "1.0.4",
   "name": "Common",
-  "description": "Org CLI tooling: pinned gh, glab, jq, ripgrep, a git safe-directory helper, and the HTE root CA baked into the trust store.",
+  "description": "Org CLI tooling: pinned gh, glab, jq, ripgrep, Node.js (npm/npx for Kilo Code MCP servers), a git safe-directory helper, and the HTE root CA baked into the trust store.",
   "options": {
     "gh": {
       "type": "string",
@@ -15,6 +15,12 @@
       "proposals": ["1.130.0", "latest"],
       "default": "1.130.0",
       "description": "GitLab CLI version."
+    },
+    "node": {
+      "type": "string",
+      "proposals": ["26.13.1", "latest", "none"],
+      "default": "26.13.1",
+      "description": "Node.js LTS version (npm/npx bundled); Kilo Code needs npx for local MCP servers (use none to skip)."
     }
   },
   "installsAfter": [
