@@ -1,6 +1,6 @@
 {
   "features": {
-    "ghcr.io/originaltrini0/devcontainers/common:1.0.5": {
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.6": {
       "version": "1.0.0",
       "resolved": "ghcr.io/originaltrini0/devcontainers/common@sha256:50a68576d46e110747ab16d88a4dbe26d778e9aa7bb68004a756480e2c8af6a9",
       "integrity": "sha256:50a68576d46e110747ab16d88a4dbe26d778e9aa7bb68004a756480e2c8af6a9"

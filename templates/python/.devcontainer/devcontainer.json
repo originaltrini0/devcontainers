@@ -1,8 +1,8 @@
 {
   "name": "python",
-  "image": "ghcr.io/originaltrini0/devcontainers/python:1.0.5",
+  "image": "ghcr.io/originaltrini0/devcontainers/python:1.0.6",
   "features": {
-    "ghcr.io/originaltrini0/devcontainers/common:1.0.5": {}
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.6": {}
   },
   "remoteUser": "vscode",
   // Container-local uv venv; the host .venv is a macOS Homebrew environment
