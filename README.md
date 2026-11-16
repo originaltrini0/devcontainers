@@ -22,11 +22,12 @@ Dockerfiles.
   jq, ripgrep, Node.js LTS with npm/npx for Kilo Code MCP servers, git
   safe-directory helper), `k8s-tools` (kubectl, talosctl,
   flux, helm, kustomize, sops, age, cilium, yq, step-opt-in) and
-  `terraform-tools` (terraform/tofu engine via a `flavor` selector plus
-  tflint, terraform-docs, terraform-ls, trivy, pre-commit). Each stack feature
-  is the sole owner of its CLI version pins — there is no baked image baseline
-  to drift from. `terraform-tools` is not published yet; it ships with the
-  next release tag.
+   `terraform-tools` (terraform/tofu engine via a `flavor` selector plus
+   tflint, terraform-docs, terraform-ls, trivy, pre-commit) and `cloud-tools`
+   (gcloud, aws, az, pwsh). Each stack feature
+   is the sole owner of its CLI version pins — there is no baked image baseline
+   to drift from. `flavor: "tofu"` must pin its own `version` — the default
+   `version` is the Terraform pin and 404s against OpenTofu releases.
 - **Projects own environment glue**: host mounts, `runArgs` (e.g. Ansible
   `--network=host`), VS Code extensions, `postCreateCommand`, secret-path
   mounts. Nothing project-specific is baked into an image or feature.
@@ -77,8 +78,8 @@ Image builds must use the **repo root** as build context
 | Go | `ghcr.io/originaltrini0/devcontainers/go:1.0.7` | `ghcr.io/originaltrini0/devcontainers/common:1.0.7`; image: gopls v0.24.0, dlv v1.27.2, staticcheck v0.8.2, gofumpt v0.12.0, goimports v0.52.0, govulncheck v1.9.0, gotest v0.0.7, air v1.67.4, golangci-lint 2.15.0 |
 | Kubernetes | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.7`, `ghcr.io/originaltrini0/devcontainers/k8s-tools:1.0.7` — kubectl 1.35.2, talosctl 1.13.2, flux 2.10.0, helm 3.22.1, kustomize 5.8.3, sops 3.13.3, age 1.3.2, cilium 0.20.3, yq v4.54.3, step `none` (opt-in) |
 | Ansible | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `ghcr.io/originaltrini0/devcontainers/common:1.0.7` |
-| Terraform / OpenTofu | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.7`, `ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.7` — flavor `terraform` v1.17.2 (alt: `tofu` 1.13.9), tflint 0.66.0, terraform-docs 0.25.1, terraform-ls 0.39.1, trivy 0.76.2, pre-commit 4.7.0. The `terraform-tools` package is first published at the **next** release tag: `bump-version.sh` rewrites this ref before tagging, so the `1.0.2` pin below does not resolve in the registry until that release. |
-| Cloud CLI | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.7`, `ghcr.io/originaltrini0/devcontainers/cloud-tools:1.0.7` — aws 2.40.3, az 2.92.0, pwsh 7.7.0, gcloud 593.0.0 (apt soft-match, manual pin — no releases feed). Composable with any stack; compose with `terraform-tools` for cloud infra roots. `cloud-tools` is likewise first published at the **next** release tag. Mount cloud credentials read-only or use container-local config dirs — never a read-write host cloud config. |
+| Terraform / OpenTofu | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.7`, `ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.7` — flavor `terraform` v1.17.2 (alt: `tofu` 1.13.9), tflint 0.66.0, terraform-docs 0.25.1, terraform-ls 0.39.1, trivy 0.76.2, pre-commit 4.7.0. |
+| Cloud CLI | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.7`, `ghcr.io/originaltrini0/devcontainers/cloud-tools:1.0.7` — aws 2.40.3, az 2.92.0, pwsh 7.7.0, gcloud 593.0.0 (apt soft-match, manual pin — no releases feed). Composable with any stack; compose with `terraform-tools` for cloud infra roots. Mount cloud credentials read-only or use container-local config dirs — never a read-write host cloud config. |
 
 `1.0.1`/`1.0.2` changed no Dockerfiles: the images are content-identical to
 the multi-arch `v1.0.0` CI release (the `1.0.2` tags alias its manifest
@@ -93,8 +94,9 @@ which already ships ansible-core, ansible-lint and molecule.
 
 ## Migrated projects
 
-Every project in `~/code/projects` consumes the shared system at the exact
-`1.0.2` pins, with a committed `devcontainer-lock.json`. `k8s-tools` options
+Every project in `~/code/projects` consumes the shared system at exact pins
+(1.0.2 line for the pre-Terraform stacks, 1.0.7 for the Terraform/Cloud
+stacks), with a committed `devcontainer-lock.json`. `k8s-tools` options
 are the single override point for per-cluster CLI divergence.
 
 | Project | Image / base | Feature ref / options |
@@ -105,13 +107,32 @@ are the single override point for per-cluster CLI divergence.
 | `k8s-dev` | `mcr.microsoft.com/devcontainers/base:ubuntu` | `k8s-tools:1.0.2` + kubectl 1.36.5, talosctl 1.14.2, flux 2.9.6, helm 4.3.0, cilium 0.20.1, step 0.31.0 (mirrors `.tool-versions`) |
 | `k8s-dev-old` (archived, runnable) | `mcr.microsoft.com/devcontainers/base:ubuntu` | `k8s-tools:1.0.2` + kubectl 1.36.0, talosctl 1.13.2, flux 2.8.7 (era pins from its own manifests) |
 | `ansible-homelab-ops` | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `common:1.0.2`; root + `--network=host` + `--hostname=ansible-dev-env`, `.vault_pass` mounted at `${containerWorkspaceFolder}` |
-| `ansible-collection-homelab-{os,infra,security,apps}` | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `common:1.0.2` (thin configs; vendored `.ansible/collections/**` untouched) |
+| `ansible-collection-homelab-{os,infra,security,apps}` (under `ansible-collections/`) | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `common:1.0.2` (thin configs; vendored `.ansible/collections/**` untouched). `ansible-homelab-ops` mounts them at `/workspaces/ansible-collections/...`, matching its `requirements.yml` relative sources. |
+| `terraform-modules/terraform-google-*`, `terraform-modules/terraform-proxmox-virtual_machine` | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.7`, `terraform-tools:1.0.7` (thin configs + `safe.directory`). `terraform-google-identity` has no local `.git` — archive-or-migrate decision pending, and gets no `postCreateCommand`. |
+| `proxmox_vm_{graylog,postgresql,tailscale}_server`, `proxmox_vm_template` | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.7`, `terraform-tools:1.0.7`; bpg/proxmox credentials via `${localEnv:PM_API_URL,PM_API_TOKEN_ID,PM_API_TOKEN_SECRET}` — never baked. These roots commit `terraform.tfvars`/`tfstate` with live API tokens and `insecure = true`: rotate, gitignore, move state to a backend. |
+| `google-cloud-foundations` | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.7`, `terraform-tools:1.0.7`, `cloud-tools:1.0.7` (az/pwsh `none`); `~/.config/gcloud` mounted **read-only** for ADC (gcloud logs a write warning — harmless). A real `init`/`plan` against the GCS backend needs the user's `gcloud` re-auth; `init -backend=false` + `validate` are credential-free. |
+
+Library repos are grouped under `~/code/projects/terraform-modules/` and
+`~/code/projects/ansible-collections/`, mirroring the GitLab namespaces;
+deployments stay flat. Terraform module sources are remote git refs, so the
+grouping needed no consumer edits beyond the `ansible-homelab-ops`
+mounts/`requirements.yml`.
 
 Validation matrix (all green): pytest 13 passed (`sglang-benchmarks`), full
 Go tool-version checks (`finplanner`), ansible/ansible-lint/molecule + vault
-read/encrypt (`ansible-homelab-ops` and the four collections), per-cluster
+read/encrypt (`ansible-homelab-ops` and the four collections — re-verified
+after the grouping move), per-cluster
 CLI pins + readable `SOPS_AGE_KEY_FILE` + kube/talos mounts (`k8s-prod`,
-`k8s-dev`, `k8s-dev-old`).
+`k8s-dev`, `k8s-dev-old`). Terraform sweep across the 16 module/root repos:
+`fmt`/`init -backend=false`/`validate` 14/16, tflint recommended-preset and
+trivy config clean or style-only findings, `tofu 1.13.9` smoke validate on a
+proxmox root. Pre-existing repo issues found by the sweep (owner fixes, not
+stack issues): fmt drift in `terraform-google-network/modules/vpc` and the
+three `google-cloud-foundations` roots; `terraform-google-workload-identities`
+declares the reserved name `variable "provider"` (init fails); docs output
+drift where `.docs/.terraform-docs.yml` exists. `templates/cloud` pins
+verified through the published 1.0.7 refs (aws 2.40.3, az 2.92.0, pwsh 7.7.0,
+gcloud alpha 2026.11.06).
 
 ## Onboarding a new project
 
