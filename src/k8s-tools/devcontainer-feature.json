@@ -1,6 +1,6 @@
 {
   "id": "k8s-tools",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "name": "Kubernetes GitOps tools",
   "description": "Pinned Kubernetes/GitOps CLIs. Sole owner of these version pins; per-project configs override options instead of forking an image.",
   "options": {
