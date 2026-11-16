@@ -100,8 +100,9 @@ for dir in "${DIRS[@]}"; do
       fi
     done <<< "$refs"
   # maxdepth 6: grouped library repos (terraform-modules/<repo>/.devcontainer)
-  # nest one level deeper than flat projects.
-  done < <(find "$dir" -mindepth 3 -maxdepth 6 -path '*/.devcontainer/devcontainer.json' | sort)
+  # nest one level deeper than flat projects. .kilo holds transient agent
+  # worktree state, not project configs, so it is pruned from the sweep.
+  done < <(find "$dir" -mindepth 3 -maxdepth 6 -path '*/.kilo' -prune -o -path '*/.devcontainer/devcontainer.json' -print | sort)
 done
 
 echo "validate-projects.sh: checked $checked refs, $([ "$fail" = 0 ] && echo OK || echo FAILURES)"
