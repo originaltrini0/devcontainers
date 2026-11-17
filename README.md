@@ -42,7 +42,7 @@ images/{python,go}/          Dockerfiles (Phase 2/3)
 src/{common,k8s-tools,terraform-tools,cloud-tools,docker-tools}/
                              devcontainer-feature.json + install.sh + lib.sh
 test/<feature>/test.sh       feature version assertions
-templates/{python,go,kubernetes,ansible,terraform,cloud}/.devcontainer/
+templates/{python,go,kubernetes,ansible,terraform,cloud,docker}/.devcontainer/
 scripts/                     canonical installers, lib.sh, sync/check tooling
 ```
 
@@ -101,6 +101,7 @@ Desktop) — the host socket inode is **never chmod'd**.
 | Ansible | `ghcr.io/ansible/community-ansible-dev-tools:v26.4.4` | `ghcr.io/originaltrini0/devcontainers/common:1.0.7` |
 | Terraform / OpenTofu | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.7`, `ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.7` — flavor `terraform` v1.17.2 (alt: `tofu` 1.13.9), tflint 0.66.0, terraform-docs 0.25.1, terraform-ls 0.39.1, trivy 0.76.2, pre-commit 4.7.0. |
 | Cloud CLI | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.7`, `ghcr.io/originaltrini0/devcontainers/cloud-tools:1.0.7` — aws 2.40.3, az 2.92.0, pwsh 7.7.0, gcloud 593.0.0 (apt soft-match, manual pin — no releases feed). Composable with any stack; compose with `terraform-tools` for cloud infra roots. Mount cloud credentials read-only or use container-local config dirs — never a read-write host cloud config. |
+| Docker (opt-in) | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.7`, `ghcr.io/originaltrini0/devcontainers/docker-tools:1.0.7` — docker 29.10.0 (static client, manual pin — tgz has no upstream checksum), compose 5.8.0, buildx 0.39.0. Self-mounts the host socket (DooD); see *Docker model*. Publishes with the next release tag. |
 
 `1.0.1`/`1.0.2` changed no Dockerfiles: the images are content-identical to
 the multi-arch `v1.0.0` CI release (the `1.0.2` tags alias its manifest
@@ -274,10 +275,11 @@ gcloud alpha 2026.11.06).
    (`X.Y.Z` / `X` / `X.Y` / `latest`) via the shared BuildKit worker and
    publishes the feature collection (`devcontainer features publish src`);
    never re-issue an already-published feature version.
-4. First release of a new package (`go`, `k8s-tools`, `terraform-tools`):
-   toggle its GHCR package
+4. First release of a new package (`go`, `k8s-tools`, `terraform-tools`,
+   `docker-tools`): toggle its GHCR package
    visibility to public in org settings — workflow-created packages default to
-   private.
+   private (`validate-projects.sh` reports `MISS` for a pinned tag until the
+   toggle lands).
 5. Projects bump exact pins via Renovate; commit refreshed lockfiles.
 6. Rollback: revert the exact tag + lockfile, redeploy the container.
 

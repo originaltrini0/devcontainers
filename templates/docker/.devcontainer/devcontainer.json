@@ -1,0 +1,51 @@
+{
+  // Docker-enabled general workspace. docker-tools is the sole owner of the
+  // docker/compose/buildx pins and self-mounts the host Docker socket
+  // (/var/run/docker.sock -> /var/run/docker-host.sock) — builds and compose
+  // run on the HOST daemon, sharing its image/layer cache. The forwarded
+  // socket is host-root-equivalent: this feature is deliberately opt-in.
+  // Omitting options gets docker 29.10.0, compose 5.8.0, buildx 0.39.0.
+  // The feature ships with the next release tag; bump-version.sh rewrites the
+  // pins below when the release line moves.
+  "name": "docker",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.7": {},
+    "ghcr.io/originaltrini0/devcontainers/docker-tools:1.0.7": {}
+  },
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "SSH_AUTH_SOCK": "/run/host-services/ssh-auth.sock"
+  },
+  // Bind-mount host config dirs so VCS access works inside the container.
+  // Every mount source must already exist on the host — Docker fails the whole
+  // container if one is missing. The docker socket bind is NOT listed here:
+  // the docker-tools feature declares it in its manifest.
+  "mounts": [
+    // The host daemon resolves build contexts and compose relative binds on
+    // the host FS, so the workspace must exist at the same path in the
+    // container — without this `docker build .` sends an empty context.
+    "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
+    // Kilo Code configuration
+    "source=${localEnv:HOME}/.config/kilo,target=/home/vscode/.config/kilo,type=bind,readonly",
+    "source=${localEnv:HOME}/.local/share/kilo,target=/home/vscode/.local/share/kilo,type=bind,consistency=cached",
+    // Host SSH agent + config/known_hosts. sk-* keys live on the YubiKey, so only
+    // the agent socket can sign; the .ssh mount provides ssh config only.
+    "source=/run/host-services/ssh-auth.sock,target=/run/host-services/ssh-auth.sock,type=bind",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
+    // gh/glab API tokens (glab/gh auth login) persist across container rebuilds.
+    "source=${localEnv:HOME}/.config/gh,target=/home/vscode/.config/gh,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/glab-cli,target=/home/vscode/.config/glab-cli,type=bind,consistency=cached"
+  ],
+  // Project-owned: add `git config --global --add safe.directory
+  // /workspaces/<project>` as postCreateCommand when needed.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "kilocode.kilo-code",
+        "ms-azuretools.vscode-containers",
+        "redhat.vscode-yaml"
+      ]
+    }
+  }
+}

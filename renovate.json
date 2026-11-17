@@ -296,6 +296,39 @@
       "datasource": "github-tags",
       "enabled": false,
       "depNameTemplate": "GoogleCloudSdkManual"
+    },
+    {
+      "description": "Docker static tgz ships no upstream checksum (same manual-bump policy as gcloud); manager stays disabled for tracking only",
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{DOCKER_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"docker\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-tags",
+      "extractVersionTemplate": "^v(?<version>[0-9][^\\s-]*)$",
+      "enabled": false,
+      "depNameTemplate": "moby/moby"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{COMPOSE_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"compose\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "docker/compose"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{BUILDX_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"buildx\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-releases",
+      "depNameTemplate": "docker/buildx"
     }
   ]
 }

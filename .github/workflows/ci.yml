@@ -115,6 +115,14 @@ jobs:
             short: arm64
             runner: ubuntu-24.04-arm
             base: mcr.microsoft.com/devcontainers/base:ubuntu
+          - feature: docker-tools
+            short: ubuntu
+            runner: ubuntu-latest
+            base: mcr.microsoft.com/devcontainers/base:ubuntu
+          - feature: docker-tools
+            short: debian
+            runner: ubuntu-latest
+            base: mcr.microsoft.com/devcontainers/base:debian
     name: features (${{ matrix.leg.feature }}-${{ matrix.leg.short }})
     steps:
       - uses: actions/checkout@v4
@@ -133,7 +141,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        template: [python, go, kubernetes, ansible, terraform, cloud]
+        template: [python, go, kubernetes, ansible, terraform, cloud, docker]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -165,7 +173,7 @@ jobs:
           cfg="$work/$name/.devcontainer/devcontainer.json"
           sed -i -E \
             -e 's#"(ghcr\.io/originaltrini0/devcontainers/(python|go)):[^"]+"#"\1:ci"#g' \
-            -e 's#"(ghcr\.io/originaltrini0/devcontainers/(common|k8s-tools|terraform-tools|cloud-tools)):[^"]+"#"./features/\2"#g' \
+            -e 's#"(ghcr\.io/originaltrini0/devcontainers/(common|k8s-tools|terraform-tools|cloud-tools|docker-tools)):[^"]+"#"./features/\2"#g' \
             "$cfg"
           devcontainer build --workspace-folder "$work/$name"
 

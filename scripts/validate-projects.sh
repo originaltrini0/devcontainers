@@ -54,7 +54,7 @@ PY
 }
 
 # Owned refs must be exact X.Y.Z — never major/latest aliases (reproducibility).
-OURS='^ghcr\.io/originaltrini0/devcontainers/(python|go|common|k8s-tools|terraform-tools|cloud-tools):(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'
+OURS='^ghcr\.io/originaltrini0/devcontainers/(python|go|common|k8s-tools|terraform-tools|cloud-tools|docker-tools):(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'
 ALLOWED_UPSTREAM=(
   '^mcr\.microsoft\.com/devcontainers/base:ubuntu$'
   '^ghcr\.io/ansible/community-ansible-dev-tools:v[0-9]+\.[0-9]+\.[0-9]+$'

@@ -81,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        template: [terraform, cloud]
+        template: [terraform, cloud, docker]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
@@ -158,6 +158,19 @@ jobs:
                 grep -qxF \"$az_ver\" <<< \"\$(az version --output tsv 2>&1 | cut -f1)\"
                 grep -qF '$pwsh_ver' <<< \"\$(pwsh --version 2>&1)\"
                 grep -qF 'Google Cloud SDK $gc_ver' <<< \"\$(gcloud version 2>&1)\"" ;;
+            docker)
+              d_ver="$(pin DOCKER_VERSION docker)"; c_ver="$(pin COMPOSE_VERSION docker)"
+              b_ver="$(pin BUILDX_VERSION docker)"
+              # The sanitize step strips only devcontainer.json mounts, so the
+              # feature's own socket bind and entrypoint survive — docker info
+              # proves the host daemon is reachable end to end on the runner.
+              devcontainer exec --workspace-folder '${{ steps.work.outputs.work }}' -- bash -lc "
+                set -euo pipefail
+                grep -qF \"Docker version $d_ver\" <<< \"\$(docker --version 2>&1)\"
+                grep -qF 'v$c_ver' <<< \"\$(docker compose version 2>&1)\"
+                grep -qF 'v$b_ver' <<< \"\$(docker buildx version 2>&1)\"
+                test -S /var/run/docker.sock
+                docker info > /dev/null" ;;
           esac
       - name: Skipping — published refs not present yet
         if: steps.published.outputs.skip == 'true'
