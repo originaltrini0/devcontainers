@@ -124,7 +124,7 @@ are the single override point for per-cluster CLI divergence.
 | Project | Image / base | Feature ref / options |
 |---------|--------------|-----------------------|
 | `sglang-benchmarks` | `python:1.0.2` | `common:1.0.2` |
-| `finplanner` | `go:1.0.2` | `common:1.0.2` |
+| `finplanner` | `go:1.0.7` | `common:1.0.7`, `docker-tools:1.0.7` (added ahead of its container work; same-path workspace bind). No local `.git` — configs cannot be committed in-repo until the project is initialized. |
 | `k8s-prod` | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.2`, `k8s-tools:1.0.2` defaults (prod baseline) |
 | `k8s-dev` | `mcr.microsoft.com/devcontainers/base:ubuntu` | `k8s-tools:1.0.2` + kubectl 1.36.5, talosctl 1.14.2, flux 2.9.6, helm 4.3.0, cilium 0.20.1, step 0.31.0 (mirrors `.tool-versions`) |
 | `k8s-dev-old` (archived, runnable) | `mcr.microsoft.com/devcontainers/base:ubuntu` | `k8s-tools:1.0.2` + kubectl 1.36.0, talosctl 1.13.2, flux 2.8.7 (era pins from its own manifests) |
@@ -133,6 +133,7 @@ are the single override point for per-cluster CLI divergence.
 | `terraform-modules/terraform-google-*`, `terraform-modules/terraform-proxmox-virtual_machine` | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.7`, `terraform-tools:1.0.7` (thin configs + `safe.directory`). `terraform-google-identity` has no local `.git` — archive-or-migrate decision pending, and gets no `postCreateCommand`. |
 | `proxmox_vm_{graylog,postgresql,tailscale}_server`, `proxmox_vm_template` | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.7`, `terraform-tools:1.0.7`; bpg/proxmox credentials via `${localEnv:PM_API_URL,PM_API_TOKEN_ID,PM_API_TOKEN_SECRET}` — never baked. These roots commit `terraform.tfvars`/`tfstate` with live API tokens and `insecure = true`: rotate, gitignore, move state to a backend. |
 | `google-cloud-foundations` | `mcr.microsoft.com/devcontainers/base:ubuntu` | `common:1.0.7`, `terraform-tools:1.0.7`, `cloud-tools:1.0.7` (az/pwsh `none`); `~/.config/gcloud` mounted **read-only** for ADC (gcloud logs a write warning — harmless). A real `init`/`plan` against the GCS backend needs the user's `gcloud` re-auth; `init -backend=false` + `validate` are credential-free. |
+| `finscribe` | `go:1.0.7` | `common:1.0.7`, `docker-tools:1.0.7` + same-path workspace bind (DooD: `docker build`/`compose` run on the host daemon). |
 
 Library repos are grouped under `~/code/projects/terraform-modules/` and
 `~/code/projects/ansible-collections/`, mirroring the GitLab namespaces;
@@ -148,7 +149,10 @@ CLI pins + readable `SOPS_AGE_KEY_FILE` + kube/talos mounts (`k8s-prod`,
 `k8s-dev`, `k8s-dev-old`). Terraform sweep across the 16 module/root repos:
 `fmt`/`init -backend=false`/`validate` 14/16, tflint recommended-preset and
 trivy config clean or style-only findings, `tofu 1.13.9` smoke validate on a
-proxmox root. Pre-existing repo issues found by the sweep (owner fixes, not
+proxmox root. DooD smoke (`finscribe`, macOS/Docker Desktop): pinned
+client/compose/buildx present, `docker info` hits the host daemon,
+`compose config` parses, multi-stage `docker build` + `compose up` serve
+HTTP 200 in-container and host-side (`finplanner` pins + socket check green). Pre-existing repo issues found by the sweep (owner fixes, not
 stack issues): fmt drift in `terraform-google-network/modules/vpc` and the
 three `google-cloud-foundations` roots; `terraform-google-workload-identities`
 declares the reserved name `variable "provider"` (init fails); docs output
