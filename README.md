@@ -24,7 +24,8 @@ Dockerfiles.
   flux, helm, kustomize, sops, age, cilium, yq, step-opt-in) and
    `terraform-tools` (terraform/tofu engine via a `flavor` selector plus
    tflint, terraform-docs, terraform-ls, trivy, pre-commit) and `cloud-tools`
-   (gcloud, aws, az, pwsh). Each stack feature
+   (gcloud, aws, az, pwsh) and `docker-tools` (pinned Docker CLI/compose/buildx
+   on the host daemon, opt-in — see *Docker model*). Each stack feature
    is the sole owner of its CLI version pins — there is no baked image baseline
    to drift from. `flavor: "tofu"` must pin its own `version` — the default
    `version` is the Terraform pin and 404s against OpenTofu releases.
@@ -38,7 +39,7 @@ Dockerfiles.
 
 ```
 images/{python,go}/          Dockerfiles (Phase 2/3)
-src/{common,k8s-tools,terraform-tools,cloud-tools}/
+src/{common,k8s-tools,terraform-tools,cloud-tools,docker-tools}/
                              devcontainer-feature.json + install.sh + lib.sh
 test/<feature>/test.sh       feature version assertions
 templates/{python,go,kubernetes,ansible,terraform,cloud}/.devcontainer/
@@ -69,6 +70,26 @@ Image builds must use the **repo root** as build context
   reverting the exact tag plus the lockfile.
 - `scripts/bump-version.sh` (Phase 4) updates image tags, feature versions and
   this README together.
+
+## Docker model (DooD, opt-in)
+
+Projects that need `docker build` / `docker compose` (e.g. `finscribe`) opt in
+with a single `docker-tools` feature line instead of per-project `runArgs`. The
+model is **Docker-outside-of-Docker**: the feature declares its own
+`/var/run/docker.sock -> /var/run/docker-host.sock` bind and a pinned
+client/compose/buildx, and talks to the **host** daemon — sharing its image and
+layer cache, no `--privileged`. DinD was rejected (privileged nested daemon, no
+host cache, flaky under Docker Desktop); the upstream
+`docker-outside-of-docker` feature was rejected because it defaults to
+`latest` and breaks the exact-pin contract. Caveats: the forwarded socket is
+**host-root-equivalent**, so the feature ships only on projects that ask for
+it; builds resolve contexts on the host FS, so configs need a same-path
+workspace bind (`source=${localWorkspaceFolder},target=${localWorkspaceFolder}`);
+the socket must exist at container create time (Docker Desktop and hosted
+runners provide it; rootless/Colima/Podman hosts override the mount target via
+the `socketPath` option). Access uses the container-local `docker` group GID
+(or a socat-forwarded socket when the host socket is root-owned, as on Docker
+Desktop) — the host socket inode is **never chmod'd**.
 
 ## Current pins
 

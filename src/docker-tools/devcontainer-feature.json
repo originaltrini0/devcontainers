@@ -1,0 +1,44 @@
+{
+  "id": "docker-tools",
+  "version": "1.0.7",
+  "name": "Docker tools (host daemon)",
+  "description": "Pinned Docker CLI, Compose v2 and Buildx wired to the HOST Docker daemon (Docker-outside-of-Docker): the feature declares the /var/run/docker.sock bind itself, so projects opt in with one feature line and no per-project runArgs. Requires a reachable host docker socket at container create time; builds run on the host engine and share its image/layer cache. The forwarded socket is host-root-equivalent — add this feature only to projects that need it.",
+  "options": {
+    "docker": {
+      "type": "string",
+      "proposals": ["29.10.0", "none"],
+      "default": "29.10.0",
+      "description": "Docker static client version (versioned tarball from download.docker.com; no upstream checksum — pin updates are manual, like gcloud). 'none' skips."
+    },
+    "compose": {
+      "type": "string",
+      "proposals": ["5.8.0", "none"],
+      "default": "5.8.0",
+      "description": "Docker Compose v2 plugin version (GitHub release, installed into cli-plugins). 'none' skips."
+    },
+    "buildx": {
+      "type": "string",
+      "proposals": ["0.39.0", "none"],
+      "default": "0.39.0",
+      "description": "Buildx plugin version (GitHub release, installed into cli-plugins). 'none' skips."
+    },
+    "socket_path": {
+      "type": "string",
+      "proposals": ["/var/run/docker-host.sock"],
+      "default": "/var/run/docker-host.sock",
+      "description": "Container path of the bound host socket. For non-default runtimes (rootless, Colima, Podman) also override this feature's mount target in devcontainer.json to the same path — the manifest bind is fixed."
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ],
+  "mounts": [
+    {
+      "source": "/var/run/docker.sock",
+      "target": "/var/run/docker-host.sock",
+      "type": "bind"
+    }
+  ],
+  "securityOpt": ["label=disable"],
+  "entrypoint": "/usr/local/share/docker-tools-init.sh"
+}
