@@ -1,0 +1,17 @@
+{
+  "id": "browser-tools",
+  "version": "1.0.8",
+  "name": "Browser tools (pinned Chrome)",
+  "description": "Pinned Google Chrome from Google's signed apt repo for Kilo Code browser automation: Kilo's Playwright backend launches the system Chrome channel (/opt/google/chrome/chrome), so the pin is independent of Kilo's bundled Playwright revision. Chrome plus its library deps is a few hundred MB; installs the deps Playwright's own Chromium fallback needs too. Debian/Ubuntu only (fails closed on Fedora). Headless needs no container flags, but default launches run with Chrome's sandbox disabled (Playwright chromiumSandbox default): a exploited page has the container user's full access. For the real sandbox add --cap-add=SYS_ADMIN; it is not enabled by default.",
+  "options": {
+    "chrome": {
+      "type": "string",
+      "proposals": ["158.0.8127.36-1", "none"],
+      "default": "158.0.8127.36-1",
+      "description": "google-chrome-stable apt version (exact four-part pin from Google's signed repo; no release feed to track, so pin updates are manual, like gcloud). 'none' skips the install."
+    }
+  },
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ]
+}

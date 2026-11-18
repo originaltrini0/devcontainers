@@ -329,6 +329,18 @@
       ],
       "datasource": "github-releases",
       "depNameTemplate": "docker/buildx"
+    },
+    {
+      "description": "Google Chrome ships apt-only (no releases feed, four-part deb revision pin); bump the pin manually and re-probe the signed apt repo",
+      "customType": "regex",
+      "fileMatch": ["^scripts/install-.*\\.sh$", "^src/.*/devcontainer-feature\\.json$"],
+      "matchStrings": [
+        "\\$\\{CHROME_VERSION:-(?<currentValue>[^\"}]+)\\}",
+        "\"chrome\": \\{[^}]*\"default\": \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasource": "github-tags",
+      "enabled": false,
+      "depNameTemplate": "GoogleChromeManual"
     }
   ]
 }
