@@ -1,11 +1,11 @@
 {
   "features": {
-    "ghcr.io/originaltrini0/devcontainers/common:1.0.7": {
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.8": {
       "version": "1.0.7",
       "resolved": "ghcr.io/originaltrini0/devcontainers/common@sha256:e92cff469ca0bc6262a39f3205b33bddb16be3638d4b0e06eebf54cf6cc3984b",
       "integrity": "sha256:e92cff469ca0bc6262a39f3205b33bddb16be3638d4b0e06eebf54cf6cc3984b"
     },
-    "ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.7": {
+    "ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.8": {
       "version": "1.0.7",
       "resolved": "ghcr.io/originaltrini0/devcontainers/terraform-tools@sha256:45e6951aad7c1cef1888c7a9e0fc51c2c14cff02af3af1112ed666dfcd3cc86b",
       "integrity": "sha256:45e6951aad7c1cef1888c7a9e0fc51c2c14cff02af3af1112ed666dfcd3cc86b"

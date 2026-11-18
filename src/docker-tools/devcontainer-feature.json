@@ -1,6 +1,6 @@
 {
   "id": "docker-tools",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "name": "Docker tools (host daemon)",
   "description": "Pinned Docker CLI, Compose v2 and Buildx wired to the HOST Docker daemon (Docker-outside-of-Docker): the feature declares the /var/run/docker.sock bind itself, so projects opt in with one feature line and no per-project runArgs. Requires a reachable host docker socket at container create time; builds run on the host engine and share its image/layer cache. The forwarded socket is host-root-equivalent — add this feature only to projects that need it.",
   "options": {

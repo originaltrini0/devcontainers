@@ -1,6 +1,6 @@
 {
   "id": "common",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "name": "Common",
   "description": "Org CLI tooling: pinned gh, glab, jq, ripgrep, Node.js (npm/npx for Kilo Code MCP servers), a git safe-directory helper, and the HTE root CA baked into the trust store.",
   "options": {

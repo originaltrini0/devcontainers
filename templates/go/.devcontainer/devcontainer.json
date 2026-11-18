@@ -1,8 +1,8 @@
 {
   "name": "go",
-  "image": "ghcr.io/originaltrini0/devcontainers/go:1.0.7",
+  "image": "ghcr.io/originaltrini0/devcontainers/go:1.0.8",
   "features": {
-    "ghcr.io/originaltrini0/devcontainers/common:1.0.7": {}
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.8": {}
   },
   "remoteUser": "vscode",
   "containerEnv": {

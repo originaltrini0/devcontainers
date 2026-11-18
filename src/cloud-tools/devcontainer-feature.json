@@ -1,6 +1,6 @@
 {
   "id": "cloud-tools",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "name": "Cloud provider CLIs",
   "description": "Pinned gcloud, AWS CLI v2, Azure CLI and PowerShell. Sole owner of these version pins; composable on any stack (e.g. terraform-tools + cloud-tools for GCP roots). Never mount host cloud config read-write — use read-only mounts or container-local config dirs.",
   "options": {
