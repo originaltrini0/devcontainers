@@ -123,6 +123,20 @@ jobs:
             short: debian
             runner: ubuntu-latest
             base: mcr.microsoft.com/devcontainers/base:debian
+          - feature: browser-tools
+            short: ubuntu
+            runner: ubuntu-latest
+            base: mcr.microsoft.com/devcontainers/base:ubuntu
+          - feature: browser-tools
+            short: debian
+            runner: ubuntu-latest
+            base: mcr.microsoft.com/devcontainers/base:debian
+          # Google ships google-chrome-stable arm64 .debs; verify the pin
+          # installs and renders natively on arm64.
+          - feature: browser-tools
+            short: arm64
+            runner: ubuntu-24.04-arm
+            base: mcr.microsoft.com/devcontainers/base:ubuntu
     name: features (${{ matrix.leg.feature }}-${{ matrix.leg.short }})
     steps:
       - uses: actions/checkout@v4
