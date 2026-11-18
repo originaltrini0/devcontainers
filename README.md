@@ -85,11 +85,46 @@ host cache, flaky under Docker Desktop); the upstream
 **host-root-equivalent**, so the feature ships only on projects that ask for
 it; builds resolve contexts on the host FS, so configs need a same-path
 workspace bind (`source=${localWorkspaceFolder},target=${localWorkspaceFolder}`);
-the socket must exist at container create time (Docker Desktop and hosted
-runners provide it; rootless/Colima/Podman hosts override the mount target via
-the `socketPath` option). Access uses the container-local `docker` group GID
+the socket must exist at container create time (Docker Desktop, Colima and
+hosted runners provide it; Linux rootless Docker / Podman hosts remap the
+source — see below). Access uses the container-local `docker` group GID
 (or a socat-forwarded socket when the host socket is root-owned, as on Docker
 Desktop) — the host socket inode is **never chmod'd**.
+
+### Non-default host sockets
+
+The feature's bind **target** `/var/run/docker-host.sock` is fixed: feature
+manifests cannot interpolate options into `mounts` (only `${devcontainerId}`
+is substituted), and the `socket_path` option only reaches `install.sh` as an
+env var — it moves the entrypoint's expected socket path, **not** the bind.
+Leave `socket_path` at its default. The CLI dedupes mounts by **target** with
+`devcontainer.json` winning, so non-default hosts override the **source** with
+a same-target mount:
+
+```jsonc
+// Linux, rootless Docker
+"mounts": [
+  { "source": "/run/user/${localEnv:UID}/docker.sock",
+    "target": "/var/run/docker-host.sock", "type": "bind" }
+]
+```
+
+Swap the `source` for other runtimes: Podman uses
+`/run/user/${localEnv:UID}/podman/podman.sock`. On Docker Desktop and Colima
+no override is needed: their daemons run in a VM and resolve bind sources
+**there**, where `/var/run/docker.sock` already exists, so the feature's
+default bind works unchanged.
+
+Sharp edge: a user mount at a **different** target does not dedupe against the
+feature's mount, so the feature's own `source=/var/run/docker.sock` bind stays
+in the create request and hard-fails container creation on hosts without that
+path. Always keep the target identical.
+
+Experimental, not supported: the spec says feature `mounts` may reference only
+`${devcontainerId}`, but CLI v0.90.0 in practice also substitutes
+`${localEnv:...}` inside feature manifest mounts (verified via
+`read-configuration --include-merged-configuration`). Do not rely on it; the
+`devcontainer.json` same-target mount above is the supported override.
 
 ## Current pins
 

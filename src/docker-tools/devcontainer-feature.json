@@ -26,7 +26,7 @@
       "type": "string",
       "proposals": ["/var/run/docker-host.sock"],
       "default": "/var/run/docker-host.sock",
-      "description": "Container path of the bound host socket. For non-default runtimes (rootless, Colima, Podman) also override this feature's mount target in devcontainer.json to the same path — the manifest bind is fixed."
+      "description": "Container path where the entrypoint expects the bound host socket. Keep the default: feature options cannot move this feature's manifest bind (fixed target /var/run/docker-host.sock). For non-default hosts (rootless Docker, Podman) add a devcontainer.json mount with the SAME target and your own source — the CLI dedupes mounts by target, devcontainer.json wins the source."
     }
   },
   "installsAfter": [
