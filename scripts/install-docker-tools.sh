@@ -148,7 +148,23 @@ fi
 if [ "\$gid" != "\$docker_gid" ] || [ "\$docker_gid" = "0" ]; then
   [ -L "\$client" ] && sudoIf rm -f "\$client"
   if [ ! -S "\$client" ]; then
-    sudoIf socat "UNIX-LISTEN:\$client,fork,mode=660,user=\$username" "UNIX-CONNECT:\$socket" >/tmp/docker-tools-socat.log 2>&1 &
+    # Diagnostics go to a root-owned 0700 dir created at runtime (/run is
+    # tmpfs, so an install-time dir never survives) and the redirect is
+    # opened inside the elevated shell, so an unprivileged entrypoint cannot
+    # win a /tmp symlink race against the root-owned write. mktemp -d is the
+    # only fallback and a logging failure must never block container start.
+    log_dir=/run/docker-tools
+    sudoIf mkdir -p "\$log_dir" 2>/dev/null \\
+      || log_dir="\$(sudoIf mktemp -d 2>/dev/null)" || true
+    if [ -n "\$log_dir" ]; then
+      sudoIf chmod 0700 "\$log_dir" 2>/dev/null || true
+      log_out="\$log_dir/socat.log"
+    else
+      log_out=/dev/null
+    fi
+    listen="UNIX-LISTEN:\$client,fork,mode=660,user=\$username"
+    sudoIf sh -c 'umask 077; socat "\$1" "UNIX-CONNECT:\$2" >> "\$3" 2>&1 &' \\
+      sh "\$listen" "\$socket" "\$log_out"
     i=0
     while [ "\$i" -lt 20 ] && [ ! -S "\$client" ]; do
       sleep 0.1

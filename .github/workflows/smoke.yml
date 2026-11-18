@@ -170,6 +170,8 @@ jobs:
                 grep -qF 'v$c_ver' <<< \"\$(docker compose version 2>&1)\"
                 grep -qF 'v$b_ver' <<< \"\$(docker buildx version 2>&1)\"
                 test -S /var/run/docker.sock
+                sudo test -f /run/docker-tools/socat.log
+                test ! -e /tmp/docker-tools-socat.log
                 docker info > /dev/null" ;;
           esac
       - name: Skipping — published refs not present yet
