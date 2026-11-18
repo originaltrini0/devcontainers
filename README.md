@@ -25,7 +25,9 @@ Dockerfiles.
    `terraform-tools` (terraform/tofu engine via a `flavor` selector plus
    tflint, terraform-docs, terraform-ls, trivy, pre-commit) and `cloud-tools`
    (gcloud, aws, az, pwsh) and `docker-tools` (pinned Docker CLI/compose/buildx
-   on the host daemon, opt-in — see *Docker model*). Each stack feature
+   on the host daemon, opt-in — see *Docker model*) and `browser-tools`
+   (pinned Google Chrome for Kilo browser automation, opt-in, Debian/Ubuntu
+   only — see *Browser tools*). Each stack feature
    is the sole owner of its CLI version pins — there is no baked image baseline
    to drift from. `flavor: "tofu"` must pin its own `version` — the default
    `version` is the Terraform pin and 404s against OpenTofu releases.
@@ -39,7 +41,7 @@ Dockerfiles.
 
 ```
 images/{python,go}/          Dockerfiles (Phase 2/3)
-src/{common,k8s-tools,terraform-tools,cloud-tools,docker-tools}/
+src/{common,k8s-tools,terraform-tools,cloud-tools,docker-tools,browser-tools}/
                              devcontainer-feature.json + install.sh + lib.sh
 test/<feature>/test.sh       feature version assertions
 templates/{python,go,kubernetes,ansible,terraform,cloud,docker}/.devcontainer/
@@ -126,6 +128,50 @@ Experimental, not supported: the spec says feature `mounts` may reference only
 `read-configuration --include-merged-configuration`). Do not rely on it; the
 `devcontainer.json` same-target mount above is the supported override.
 
+## Browser tools (opt-in)
+
+Kilo Code's browser backend launches **system Chrome** first — Playwright
+`channel: "chrome"`, discovering `/opt/google/chrome/chrome`; "Use system
+Chrome" is on by default. The `browser-tools` feature installs a pinned
+`google-chrome-stable` from Google's **signed apt repo** (keyring under
+`/etc/apt/keyrings`, primary fingerprint pinned), so the pin is independent of
+Kilo's bundled `playwright-core` revision. Projects that use browser
+automation opt in with one line in `devcontainer.json` features:
+
+```jsonc
+"ghcr.io/originaltrini0/devcontainers/browser-tools:1.0.8": {}
+```
+
+- **Only option: `chrome`** — the exact four-part deb version (e.g.
+  `158.0.8127.36-1`) or `none` to skip the install entirely. No `latest`: if
+  the pin vanishes from Google's repo the build **fails closed**. Chrome has
+  no releases feed, so the pin is bumped manually like `gcloud`
+  (`GoogleChromeManual` in `renovate.json` is a disabled tracking entry).
+- **Sandbox.** Default headless launches need **no container flags**:
+  Playwright/Kilo default to `chromiumSandbox: false`, which is why the
+  feature ships no `securityOpt` or `runArgs` — but it also means an exploited
+  page has the container user's full access. For the real sandbox add
+  `"runArgs": ["--cap-add=SYS_ADMIN"]`; the default Docker seccomp profile
+  then permits it (verified for the `vscode` user through Playwright
+  `chromiumSandbox: true`). Never wrap Chrome in a global `--no-sandbox`
+  alias — that masks sandbox failures for every consumer.
+- **`/dev/shm`.** Docker's 64 MB default is fine for the Kilo path:
+  Playwright's bundled default args already include
+  `--disable-dev-shm-usage`. Manual or headful Chrome should use
+  `--shm-size=2g` instead.
+- **"Use system Chrome" disabled in Kilo:** the backend downloads its own
+  pinned Chromium into the Kilo data dir
+  (`~/.local/share/kilo`, already bind-mounted read-write in the templates),
+  and the Chrome install supplies the system libraries that download needs.
+  With `chrome: "none"` neither the binary nor those libraries are installed,
+  so the fallback only works on a base that already carries them — keep the
+  default if Kilo might fall back.
+- **Scope and size.** Debian/Ubuntu only (the installer fails closed on
+  Fedora/Ansible bases). Chrome plus library deps is a few hundred MB down;
+  it does not depend on any host browser install. Not in any template —
+  opt-in per project; the combination is feature-test covered on a bare base,
+  not via a template.
+
 ## Current pins
 
 | Stack | Image / base | Features (defaults) |
@@ -137,6 +183,7 @@ Experimental, not supported: the spec says feature `mounts` may reference only
 | Terraform / OpenTofu | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.8`, `ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.8` — flavor `terraform` v1.17.2 (alt: `tofu` 1.13.9), tflint 0.66.0, terraform-docs 0.25.1, terraform-ls 0.39.1, trivy 0.76.2, pre-commit 4.7.0. |
 | Cloud CLI | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.8`, `ghcr.io/originaltrini0/devcontainers/cloud-tools:1.0.8` — aws 2.40.3, az 2.92.0, pwsh 7.7.0, gcloud 593.0.0 (apt soft-match, manual pin — no releases feed). Composable with any stack; compose with `terraform-tools` for cloud infra roots. Mount cloud credentials read-only or use container-local config dirs — never a read-write host cloud config. |
 | Docker (opt-in) | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/common:1.0.8`, `ghcr.io/originaltrini0/devcontainers/docker-tools:1.0.8` — docker 29.10.0 (static client, manual pin — tgz has no upstream checksum), compose 5.8.0, buildx 0.39.0. Self-mounts the host socket (DooD); see *Docker model*. Publishes with the next release tag. |
+| Browser (opt-in) | `mcr.microsoft.com/devcontainers/base:ubuntu` | `ghcr.io/originaltrini0/devcontainers/browser-tools:1.0.8` — google-chrome-stable 158.0.8127.36-1 (four-part apt pin from Google's signed repo, manual bump — no releases feed; `none` skips). Debian/Ubuntu only; see *Browser tools*. Publishes with the next release tag. |
 
 `1.0.1`/`1.0.2` changed no Dockerfiles: the images are content-identical to
 the multi-arch `v1.0.0` CI release (the `1.0.2` tags alias its manifest
@@ -250,6 +297,12 @@ gcloud alpha 2026.11.06).
   fails on drift.
 - If Renovate misses a pin: edit the canonical script and feature-option
   default together in one PR, then `sync-features.sh`.
+- Manual-bump exceptions (no Renovate automation): `install-cloud-tools.sh`
+  gcloud and `install-browser-tools.sh` Chrome are apt-only with no releases
+  feed — four-part pins, kept in sync with the `src/<feature>` option default
+  by hand; their Renovate regex managers (`GoogleCloudSdkManual`,
+  `GoogleChromeManual`) stay disabled for tracking. `install-docker-tools.sh`
+  is likewise manual (static tgz, no upstream checksum).
 - Merging to `main` triggers CI (build + feature tests) but publishes
   nothing; a bump is usable by projects only after a release:
   `scripts/bump-version.sh X.Y.Z`, commit, tag `vX.Y.Z`, push tag (see
