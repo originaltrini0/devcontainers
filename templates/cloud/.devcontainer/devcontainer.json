@@ -3,15 +3,15 @@
   // General-purpose cloud CLI workspace. No custom image: cloud-tools is the
   // sole owner of the gcloud/aws/az/pwsh pins. Compose with terraform-tools
   // for infrastructure roots — e.g. google-cloud-foundations:
-  //   "ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.8": { "flavor": "terraform" },
-  //   "ghcr.io/originaltrini0/devcontainers/cloud-tools:1.0.8": { "az": "none", "pwsh": "none" }
+  //   "ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.9": { "flavor": "terraform" },
+  //   "ghcr.io/originaltrini0/devcontainers/cloud-tools:1.0.9": { "az": "none", "pwsh": "none" }
   // Omitting options gets aws 2.40.3, az 2.92.0, pwsh 7.7.0, gcloud 593.0.0.
   // The feature ships with the next release tag; bump-version.sh rewrites the
   // pins below when the release line moves.
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
-    "ghcr.io/originaltrini0/devcontainers/common:1.0.8": {},
-    "ghcr.io/originaltrini0/devcontainers/cloud-tools:1.0.8": {}
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.9": {},
+    "ghcr.io/originaltrini0/devcontainers/cloud-tools:1.0.9": {}
   },
   "remoteUser": "vscode",
   "containerEnv": {

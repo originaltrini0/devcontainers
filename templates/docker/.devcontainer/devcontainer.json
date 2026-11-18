@@ -10,8 +10,8 @@
   "name": "docker",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
-    "ghcr.io/originaltrini0/devcontainers/common:1.0.8": {},
-    "ghcr.io/originaltrini0/devcontainers/docker-tools:1.0.8": {}
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.9": {},
+    "ghcr.io/originaltrini0/devcontainers/docker-tools:1.0.9": {}
   },
   "remoteUser": "vscode",
   "containerEnv": {

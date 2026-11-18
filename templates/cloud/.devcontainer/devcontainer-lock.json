@@ -1,11 +1,11 @@
 {
   "features": {
-    "ghcr.io/originaltrini0/devcontainers/cloud-tools:1.0.8": {
+    "ghcr.io/originaltrini0/devcontainers/cloud-tools:1.0.9": {
       "version": "1.0.7",
       "resolved": "ghcr.io/originaltrini0/devcontainers/cloud-tools@sha256:3bdd225c975ab1f845cfbd590058b62e7c66acafef01a3efda94ff2793a1c361",
       "integrity": "sha256:3bdd225c975ab1f845cfbd590058b62e7c66acafef01a3efda94ff2793a1c361"
     },
-    "ghcr.io/originaltrini0/devcontainers/common:1.0.8": {
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.9": {
       "version": "1.0.7",
       "resolved": "ghcr.io/originaltrini0/devcontainers/common@sha256:e92cff469ca0bc6262a39f3205b33bddb16be3638d4b0e06eebf54cf6cc3984b",
       "integrity": "sha256:e92cff469ca0bc6262a39f3205b33bddb16be3638d4b0e06eebf54cf6cc3984b"

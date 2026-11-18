@@ -3,7 +3,7 @@
   // No custom image: terraform-tools is the sole owner of the CLI pins, so a
   // baked image would only duplicate them. One engine per project via the
   // `flavor` option — e.g. an OpenTofu project:
-  //   "ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.8": {
+  //   "ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.9": {
   //     "flavor": "tofu", "version": "1.13.9"
   //   }
   // Omitting options entirely gets Terraform 1.17.2 plus tflint 0.66.0,
@@ -12,8 +12,8 @@
   // pins below when the release line moves.
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
-    "ghcr.io/originaltrini0/devcontainers/common:1.0.8": {},
-    "ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.8": {}
+    "ghcr.io/originaltrini0/devcontainers/common:1.0.9": {},
+    "ghcr.io/originaltrini0/devcontainers/terraform-tools:1.0.9": {}
   },
   "remoteUser": "vscode",
   "containerEnv": {
